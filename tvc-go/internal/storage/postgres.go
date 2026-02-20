@@ -431,6 +431,42 @@ func (s *PostgresStore) UpdateReplaySession(ctx context.Context, session *models
 	return nil
 }
 
+func (s *PostgresStore) GetPendingSessions(ctx context.Context, limit int) ([]PendingSession, error) {
+	query := `
+		SELECT rs.id, rs.name, rs.project_id, rs.source_environment_id, rs.sample_size, rs.created_at,
+		       e.base_url, rs.traffic_start_time, rs.traffic_end_time
+		FROM replay_sessions rs
+		JOIN environments e ON e.id = rs.target_environment_id
+		WHERE rs.status = 'pending'
+		ORDER BY rs.created_at ASC
+		LIMIT $1
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("querying pending sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var sessions []PendingSession
+	for rows.Next() {
+		var ps PendingSession
+		if err := rows.Scan(
+			&ps.ID, &ps.Name, &ps.ProjectID, &ps.SourceEnvID, &ps.SampleSize, &ps.CreatedAt,
+			&ps.TargetURL, &ps.TrafficStartTime, &ps.TrafficEndTime,
+		); err != nil {
+			return nil, fmt.Errorf("scanning pending session: %w", err)
+		}
+		sessions = append(sessions, ps)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating pending sessions: %w", err)
+	}
+
+	return sessions, nil
+}
+
 func (s *PostgresStore) SaveReplayResult(ctx context.Context, result *models.ReplayResult) error {
 	diffJSON, _ := json.Marshal(result.DiffReport)
 	respBody, _ := json.Marshal(result.TargetResponseBody)

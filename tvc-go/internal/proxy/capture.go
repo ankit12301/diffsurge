@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -15,9 +16,10 @@ import (
 )
 
 type CaptureStats struct {
-	Captured  int64
-	Dropped   int64
-	QueueSize int
+	Captured   int64
+	Dropped    int64
+	QueueSize  int
+	RedisQueue int64
 }
 
 type TrafficStore interface {
@@ -28,18 +30,27 @@ type PIIRedactor interface {
 	RedactTrafficLog(log *models.TrafficLog) interface{}
 }
 
+// RedisQueue defines the interface for Redis-based traffic queueing
+type RedisQueue interface {
+	EnqueueTraffic(ctx context.Context, log *models.TrafficLog) error
+	DequeueTraffic(ctx context.Context, timeout time.Duration) (*models.TrafficLog, error)
+	GetQueueLength(ctx context.Context) (int64, error)
+}
+
 type TrafficCapture struct {
 	buffer      chan *models.TrafficLog
 	workers     int
 	store       TrafficStore
 	sampler     Sampler
 	piiRedactor PIIRedactor
+	redisQueue  RedisQueue
 	log         *logger.Logger
 	wg          sync.WaitGroup
 	captured    atomic.Int64
 	dropped     atomic.Int64
 	mu          sync.Mutex
 	closed      bool
+	useRedis    bool
 }
 
 func NewTrafficCapture(queueSize, workers int, store TrafficStore, sampler Sampler, log *logger.Logger) *TrafficCapture {
@@ -52,6 +63,12 @@ func NewTrafficCapture(queueSize, workers int, store TrafficStore, sampler Sampl
 	}
 }
 
+// SetRedisQueue enables Redis-based persistent queueing
+func (tc *TrafficCapture) SetRedisQueue(redisQueue RedisQueue) {
+	tc.redisQueue = redisQueue
+	tc.useRedis = true
+}
+
 // SetPIIRedactor attaches a PII redactor that processes logs before storage.
 func (tc *TrafficCapture) SetPIIRedactor(r PIIRedactor) {
 	tc.piiRedactor = r
@@ -60,9 +77,21 @@ func (tc *TrafficCapture) SetPIIRedactor(r PIIRedactor) {
 func (tc *TrafficCapture) Start() {
 	for i := 0; i < tc.workers; i++ {
 		tc.wg.Add(1)
-		go tc.worker(i)
+		if tc.useRedis {
+			go tc.redisWorker(i)
+		} else {
+			go tc.channelWorker(i)
+		}
 	}
-	tc.log.Info().Int("workers", tc.workers).Int("queue_size", cap(tc.buffer)).Msg("Traffic capture started")
+	mode := "channel"
+	if tc.useRedis {
+		mode = "redis"
+	}
+	tc.log.Info().
+		Int("workers", tc.workers).
+		Int("queue_size", cap(tc.buffer)).
+		Str("mode", mode).
+		Msg("Traffic capture started")
 }
 
 func (tc *TrafficCapture) Stop() {
@@ -83,27 +112,74 @@ func (tc *TrafficCapture) Stop() {
 }
 
 func (tc *TrafficCapture) Stats() CaptureStats {
-	return CaptureStats{
+	stats := CaptureStats{
 		Captured:  tc.captured.Load(),
 		Dropped:   tc.dropped.Load(),
 		QueueSize: len(tc.buffer),
 	}
+	
+	if tc.useRedis && tc.redisQueue != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		if length, err := tc.redisQueue.GetQueueLength(ctx); err == nil {
+			stats.RedisQueue = length
+		}
+	}
+	
+	return stats
 }
 
-func (tc *TrafficCapture) worker(id int) {
+// channelWorker processes logs from the in-memory channel buffer
+func (tc *TrafficCapture) channelWorker(id int) {
 	defer tc.wg.Done()
 	for log := range tc.buffer {
-		if tc.piiRedactor != nil {
-			tc.piiRedactor.RedactTrafficLog(log)
-		}
-		if tc.store != nil {
-			if err := tc.store.SaveTrafficLog(log); err != nil {
-				tc.log.Error().Err(err).Int("worker", id).Msg("Failed to save traffic log")
-				continue
-			}
-		}
-		tc.captured.Add(1)
+		tc.processLog(log, id)
 	}
+}
+
+// redisWorker processes logs from Redis queue
+func (tc *TrafficCapture) redisWorker(id int) {
+	defer tc.wg.Done()
+	ctx := context.Background()
+	
+	for {
+		tc.mu.Lock()
+		if tc.closed {
+			tc.mu.Unlock()
+			return
+		}
+		tc.mu.Unlock()
+		
+		log, err := tc.redisQueue.DequeueTraffic(ctx, 1*time.Second)
+		if err != nil {
+			tc.log.Error().Err(err).Int("worker", id).Msg("Failed to dequeue from Redis")
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		
+		if log == nil {
+			// Timeout, no items in queue - continue polling
+			continue
+		}
+		
+		tc.processLog(log, id)
+	}
+}
+
+// processLog handles PII redaction and storage for a single log
+func (tc *TrafficCapture) processLog(log *models.TrafficLog, workerID int) {
+	if tc.piiRedactor != nil {
+		tc.piiRedactor.RedactTrafficLog(log)
+	}
+	
+	if tc.store != nil {
+		if err := tc.store.SaveTrafficLog(log); err != nil {
+			tc.log.Error().Err(err).Int("worker", workerID).Msg("Failed to save traffic log")
+			return
+		}
+	}
+	
+	tc.captured.Add(1)
 }
 
 func (tc *TrafficCapture) Middleware(next http.Handler) http.Handler {
@@ -194,12 +270,25 @@ func (tc *TrafficCapture) enqueue(r *http.Request, reqBody []byte, rec *response
 		tc.mu.Unlock()
 		return
 	}
-	select {
-	case tc.buffer <- trafficLog:
-	default:
-		tc.dropped.Add(1)
-	}
 	tc.mu.Unlock()
+
+	// Use Redis if available, fallback to channel
+	if tc.useRedis && tc.redisQueue != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		
+		if err := tc.redisQueue.EnqueueTraffic(ctx, trafficLog); err != nil {
+			tc.log.Error().Err(err).Msg("Failed to enqueue to Redis, dropping traffic log")
+			tc.dropped.Add(1)
+		}
+	} else {
+		// Use in-memory channel buffer
+		select {
+		case tc.buffer <- trafficLog:
+		default:
+			tc.dropped.Add(1)
+		}
+	}
 }
 
 type responseRecorder struct {

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tvc-org/tvc/internal/api/handlers"
 	"github.com/tvc-org/tvc/internal/api/middleware"
 	"github.com/tvc-org/tvc/internal/storage"
@@ -29,6 +30,9 @@ func NewRouter(deps ServerDeps) http.Handler {
 	// Health endpoints (no auth)
 	mux.HandleFunc("GET /api/v1/health", health.Health)
 	mux.HandleFunc("GET /api/v1/ready", health.Ready)
+
+	// Metrics endpoint (no auth - should be restricted via firewall in production)
+	mux.Handle("GET /metrics", promhttp.Handler())
 
 	// Projects
 	mux.HandleFunc("GET /api/v1/projects", projects.List)
@@ -69,7 +73,9 @@ func NewRouter(deps ServerDeps) http.Handler {
 	auth := middleware.NewAuth(deps.AuthConfig, deps.Log)
 	var handler http.Handler = mux
 
-	handler = middleware.AuthExempt(auth, handler,
+		"/metrics",
+	)
+	handler = middleware.PrometheusMiddleware()(handlerhandler = middleware.AuthExempt(auth, handler,
 		"/api/v1/health",
 		"/api/v1/ready",
 	)

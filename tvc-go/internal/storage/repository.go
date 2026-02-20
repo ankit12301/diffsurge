@@ -10,14 +10,27 @@ import (
 
 type TrafficFilter struct {
 	ProjectID     uuid.UUID
-	EnvironmentID uuid.UUID
-	StartTime     time.Time
-	EndTime       time.Time
+	EnvironmentID *uuid.UUID
+	StartTime     *time.Time
+	EndTime       *time.Time
 	Paths         []string
 	Methods       []string
 	StatusCodes   []int
 	Limit         int
 	Offset        int
+}
+
+// PendingSession represents a replay session waiting to be executed
+type PendingSession struct {
+	ID               uuid.UUID
+	Name             string
+	ProjectID        uuid.UUID
+	SourceEnvID      uuid.UUID
+	TargetURL        string
+	SampleSize       int
+	TrafficStartTime *time.Time
+	TrafficEndTime   *time.Time
+	CreatedAt        time.Time
 }
 
 type Repository interface {
@@ -49,6 +62,7 @@ type Repository interface {
 	GetReplaySession(ctx context.Context, id uuid.UUID) (*models.ReplaySession, error)
 	CreateReplaySession(ctx context.Context, session *models.ReplaySession) error
 	UpdateReplaySession(ctx context.Context, session *models.ReplaySession) error
+	GetPendingSessions(ctx context.Context, limit int) ([]PendingSession, error)
 
 	// Replay Results
 	SaveReplayResult(ctx context.Context, result *models.ReplayResult) error
