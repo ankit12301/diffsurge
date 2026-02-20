@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/tvc-org/tvc/internal/api"
+	"github.com/tvc-org/tvc/internal/api/middleware"
 	"github.com/tvc-org/tvc/internal/config"
+	"github.com/tvc-org/tvc/internal/storage"
 	"github.com/tvc-org/tvc/pkg/logger"
 )
 
@@ -28,7 +30,36 @@ func main() {
 	}
 	addr := fmt.Sprintf(":%d", port)
 
-	router := api.NewRouter()
+	// Database connection
+	pgURL := os.Getenv("TVC_STORAGE_POSTGRES_URL")
+	if pgURL == "" && cfg != nil {
+		pgURL = cfg.Storage.PostgresURL
+	}
+	if pgURL == "" {
+		pgURL = "postgres://tvc:tvc_dev_pass@localhost:5432/tvc_dev?sslmode=disable"
+	}
+
+	store, err := storage.NewPostgresStore(pgURL)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to database")
+	}
+	defer store.Close()
+	log.Info().Msg("Connected to PostgreSQL")
+
+	// Auth config from environment
+	authCfg := middleware.AuthConfig{
+		SupabaseURL:    os.Getenv("SUPABASE_URL"),
+		SupabaseSecret: os.Getenv("SUPABASE_SERVICE_KEY"),
+		JWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
+	}
+
+	deps := api.ServerDeps{
+		Store:      store,
+		Log:        log,
+		AuthConfig: authCfg,
+	}
+
+	router := api.NewRouter(deps)
 
 	server := &http.Server{
 		Addr:         addr,

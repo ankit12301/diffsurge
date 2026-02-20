@@ -2,105 +2,81 @@ package api
 
 import (
 	"net/http"
+
+	"github.com/tvc-org/tvc/internal/api/handlers"
+	"github.com/tvc-org/tvc/internal/api/middleware"
+	"github.com/tvc-org/tvc/internal/storage"
+	"github.com/tvc-org/tvc/pkg/logger"
 )
 
-func NewRouter() http.Handler {
+type ServerDeps struct {
+	Store      storage.Repository
+	Log        *logger.Logger
+	AuthConfig middleware.AuthConfig
+}
+
+func NewRouter(deps ServerDeps) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /api/v1/projects", handleListProjects)
-	mux.HandleFunc("POST /api/v1/projects", handleCreateProject)
-	mux.HandleFunc("GET /api/v1/projects/{id}", handleGetProject)
-	mux.HandleFunc("PUT /api/v1/projects/{id}", handleUpdateProject)
-	mux.HandleFunc("DELETE /api/v1/projects/{id}", handleDeleteProject)
+	projects := handlers.NewProjectHandler(deps.Store, deps.Log)
+	traffic := handlers.NewTrafficHandler(deps.Store, deps.Log)
+	environments := handlers.NewEnvironmentHandler(deps.Store, deps.Log)
+	replays := handlers.NewReplayHandler(deps.Store, deps.Log)
+	schemas := handlers.NewSchemaHandler(deps.Store, deps.Log)
+	orgs := handlers.NewOrganizationHandler(deps.Store, deps.Log)
+	health := handlers.NewHealthHandler(deps.Store)
 
-	mux.HandleFunc("GET /api/v1/projects/{id}/traffic", handleListTraffic)
-	mux.HandleFunc("GET /api/v1/projects/{id}/traffic/{logId}", handleGetTrafficLog)
-	mux.HandleFunc("GET /api/v1/projects/{id}/traffic/stats", handleTrafficStats)
+	// Health endpoints (no auth)
+	mux.HandleFunc("GET /api/v1/health", health.Health)
+	mux.HandleFunc("GET /api/v1/ready", health.Ready)
 
-	mux.HandleFunc("GET /api/v1/projects/{id}/replays", handleListReplays)
-	mux.HandleFunc("POST /api/v1/projects/{id}/replays", handleCreateReplay)
-	mux.HandleFunc("GET /api/v1/projects/{id}/replays/{replayId}", handleGetReplay)
-	mux.HandleFunc("POST /api/v1/projects/{id}/replays/{replayId}/start", handleStartReplay)
-	mux.HandleFunc("POST /api/v1/projects/{id}/replays/{replayId}/stop", handleStopReplay)
-	mux.HandleFunc("GET /api/v1/projects/{id}/replays/{replayId}/results", handleReplayResults)
+	// Projects
+	mux.HandleFunc("GET /api/v1/projects", projects.List)
+	mux.HandleFunc("POST /api/v1/projects", projects.Create)
+	mux.HandleFunc("GET /api/v1/projects/{id}", projects.Get)
+	mux.HandleFunc("PUT /api/v1/projects/{id}", projects.Update)
+	mux.HandleFunc("DELETE /api/v1/projects/{id}", projects.Delete)
 
-	mux.HandleFunc("GET /api/v1/projects/{id}/schemas", handleListSchemas)
-	mux.HandleFunc("POST /api/v1/projects/{id}/schemas", handleUploadSchema)
-	mux.HandleFunc("POST /api/v1/projects/{id}/schemas/diff", handleSchemaDiff)
+	// Traffic
+	mux.HandleFunc("GET /api/v1/projects/{id}/traffic", traffic.List)
+	mux.HandleFunc("GET /api/v1/projects/{id}/traffic/stats", traffic.Stats)
+	mux.HandleFunc("GET /api/v1/projects/{id}/traffic/{logId}", traffic.Get)
 
-	return mux
-}
+	// Environments
+	mux.HandleFunc("GET /api/v1/projects/{id}/environments", environments.List)
+	mux.HandleFunc("POST /api/v1/projects/{id}/environments", environments.Create)
+	mux.HandleFunc("GET /api/v1/projects/{id}/environments/{envId}", environments.Get)
 
-func jsonResponse(w http.ResponseWriter, status int, body string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write([]byte(body)) //nolint:errcheck
-}
+	// Replays
+	mux.HandleFunc("GET /api/v1/projects/{id}/replays", replays.List)
+	mux.HandleFunc("POST /api/v1/projects/{id}/replays", replays.Create)
+	mux.HandleFunc("GET /api/v1/projects/{id}/replays/{replayId}", replays.Get)
+	mux.HandleFunc("POST /api/v1/projects/{id}/replays/{replayId}/start", replays.Start)
+	mux.HandleFunc("POST /api/v1/projects/{id}/replays/{replayId}/stop", replays.Stop)
+	mux.HandleFunc("GET /api/v1/projects/{id}/replays/{replayId}/results", replays.Results)
 
-func handleListProjects(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusOK, `{"projects":[],"message":"not yet implemented"}`)
-}
+	// Schemas
+	mux.HandleFunc("GET /api/v1/projects/{id}/schemas", schemas.List)
+	mux.HandleFunc("POST /api/v1/projects/{id}/schemas", schemas.Upload)
+	mux.HandleFunc("POST /api/v1/projects/{id}/schemas/diff", schemas.Diff)
 
-func handleCreateProject(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
+	// Organizations
+	mux.HandleFunc("GET /api/v1/organizations", orgs.List)
+	mux.HandleFunc("POST /api/v1/organizations", orgs.Create)
+	mux.HandleFunc("GET /api/v1/organizations/{id}", orgs.Get)
 
-func handleGetProject(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
+	// Build middleware chain (applied in reverse order)
+	auth := middleware.NewAuth(deps.AuthConfig, deps.Log)
+	var handler http.Handler = mux
 
-func handleUpdateProject(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
+	handler = middleware.AuthExempt(auth, handler,
+		"/api/v1/health",
+		"/api/v1/ready",
+	)
+	handler = middleware.Recovery(deps.Log)(handler)
+	handler = middleware.Logging(deps.Log)(handler)
+	handler = middleware.RequestID(handler)
+	handler = middleware.CORS(middleware.DefaultCORSConfig())(handler)
 
-func handleDeleteProject(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleListTraffic(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusOK, `{"traffic":[],"message":"not yet implemented"}`)
-}
-
-func handleGetTrafficLog(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleTrafficStats(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleListReplays(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusOK, `{"replays":[],"message":"not yet implemented"}`)
-}
-
-func handleCreateReplay(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleGetReplay(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleStartReplay(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleStopReplay(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleReplayResults(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleListSchemas(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusOK, `{"schemas":[],"message":"not yet implemented"}`)
-}
-
-func handleUploadSchema(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
-}
-
-func handleSchemaDiff(w http.ResponseWriter, r *http.Request) {
-	jsonResponse(w, http.StatusNotImplemented, `{"message":"not yet implemented"}`)
+	return handler
 }

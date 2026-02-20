@@ -21,6 +21,11 @@ type TrafficFilter struct {
 }
 
 type Repository interface {
+	// Organizations
+	CreateOrganization(ctx context.Context, org *models.Organization) error
+	GetOrganization(ctx context.Context, id uuid.UUID) (*models.Organization, error)
+	ListUserOrganizations(ctx context.Context, userID uuid.UUID) ([]models.Organization, error)
+
 	// Traffic
 	SaveTrafficLog(log *models.TrafficLog) error
 	FetchTraffic(ctx context.Context, filter TrafficFilter) ([]models.TrafficLog, error)

@@ -45,6 +45,53 @@ func (s *PostgresStore) Close() error {
 	return s.db.Close()
 }
 
+func (s *PostgresStore) CreateOrganization(ctx context.Context, org *models.Organization) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO organizations (id, name, slug) VALUES ($1, $2, $3)`,
+		org.ID, org.Name, org.Slug)
+	if err != nil {
+		return fmt.Errorf("creating organization: %w", err)
+	}
+	return nil
+}
+
+func (s *PostgresStore) GetOrganization(ctx context.Context, id uuid.UUID) (*models.Organization, error) {
+	var org models.Organization
+	err := s.db.QueryRowContext(ctx,
+		"SELECT id, name, slug, created_at, updated_at FROM organizations WHERE id = $1", id).
+		Scan(&org.ID, &org.Name, &org.Slug, &org.CreatedAt, &org.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("organization not found: %s", id)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting organization: %w", err)
+	}
+	return &org, nil
+}
+
+func (s *PostgresStore) ListUserOrganizations(ctx context.Context, userID uuid.UUID) ([]models.Organization, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT o.id, o.name, o.slug, o.created_at, o.updated_at
+		FROM organizations o
+		INNER JOIN user_organizations uo ON o.id = uo.organization_id
+		WHERE uo.user_id = $1
+		ORDER BY o.name`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("listing user organizations: %w", err)
+	}
+	defer rows.Close()
+
+	var orgs []models.Organization
+	for rows.Next() {
+		var o models.Organization
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.CreatedAt, &o.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scanning organization: %w", err)
+		}
+		orgs = append(orgs, o)
+	}
+	return orgs, rows.Err()
+}
+
 func (s *PostgresStore) SaveTrafficLog(log *models.TrafficLog) error {
 	queryParams, _ := json.Marshal(log.QueryParams)
 	reqHeaders, _ := json.Marshal(log.RequestHeaders)

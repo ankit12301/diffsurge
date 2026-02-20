@@ -24,17 +24,22 @@ type TrafficStore interface {
 	SaveTrafficLog(log *models.TrafficLog) error
 }
 
+type PIIRedactor interface {
+	RedactTrafficLog(log *models.TrafficLog) interface{}
+}
+
 type TrafficCapture struct {
-	buffer   chan *models.TrafficLog
-	workers  int
-	store    TrafficStore
-	sampler  Sampler
-	log      *logger.Logger
-	wg       sync.WaitGroup
-	captured atomic.Int64
-	dropped  atomic.Int64
-	mu       sync.Mutex
-	closed   bool
+	buffer      chan *models.TrafficLog
+	workers     int
+	store       TrafficStore
+	sampler     Sampler
+	piiRedactor PIIRedactor
+	log         *logger.Logger
+	wg          sync.WaitGroup
+	captured    atomic.Int64
+	dropped     atomic.Int64
+	mu          sync.Mutex
+	closed      bool
 }
 
 func NewTrafficCapture(queueSize, workers int, store TrafficStore, sampler Sampler, log *logger.Logger) *TrafficCapture {
@@ -45,6 +50,11 @@ func NewTrafficCapture(queueSize, workers int, store TrafficStore, sampler Sampl
 		sampler: sampler,
 		log:     log,
 	}
+}
+
+// SetPIIRedactor attaches a PII redactor that processes logs before storage.
+func (tc *TrafficCapture) SetPIIRedactor(r PIIRedactor) {
+	tc.piiRedactor = r
 }
 
 func (tc *TrafficCapture) Start() {
@@ -83,6 +93,9 @@ func (tc *TrafficCapture) Stats() CaptureStats {
 func (tc *TrafficCapture) worker(id int) {
 	defer tc.wg.Done()
 	for log := range tc.buffer {
+		if tc.piiRedactor != nil {
+			tc.piiRedactor.RedactTrafficLog(log)
+		}
 		if tc.store != nil {
 			if err := tc.store.SaveTrafficLog(log); err != nil {
 				tc.log.Error().Err(err).Int("worker", id).Msg("Failed to save traffic log")
