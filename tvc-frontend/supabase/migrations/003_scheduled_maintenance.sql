@@ -3,69 +3,107 @@
 -- These functions should be called by a scheduler (pg_cron, external cron, etc.)
 -- ============================================================================
 
--- ── Job 1: Auto-create future partitions (Run weekly) ──────────────────────
--- This creates 3 months of future partitions to ensure we never run out
--- Recommended schedule: Every Monday at 2 AM
--- Cron expression: 0 2 * * 1
+-- ── Enable pg_cron extension (if available) ─────────────────────────────────
+-- NOTE: In Supabase, pg_cron is available on Pro tier and above
+-- If not available, you'll need to use external scheduling (see notes below)
 
-SELECT cron.schedule(
-    'create_future_traffic_partitions',
-    '0 2 * * 1',  -- Every Monday at 2 AM
-    $$SELECT * FROM create_next_traffic_partitions(3)$$
-);
+DO $$
+BEGIN
+    -- Try to create the extension
+    CREATE EXTENSION IF NOT EXISTS pg_cron;
+    RAISE NOTICE 'pg_cron extension enabled successfully';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'pg_cron extension requires superuser privileges. Use Supabase dashboard to enable it or use external scheduling.';
+    WHEN undefined_file THEN
+        RAISE NOTICE 'pg_cron extension is not available. Use external scheduling (see notes at end of file).';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Could not enable pg_cron: %. Use external scheduling.', SQLERRM;
+END $$;
 
--- ── Job 2: Refresh materialized views (Run hourly) ─────────────────────────
--- Keep dashboard statistics up to date
--- Recommended schedule: Every hour at :05
--- Cron expression: 5 * * * *
+-- ── Helper Function for Reindexing ─────────────────────────────────────────
+-- pg_cron needs a single statement, so we wrap multiple reindex operations in a function
 
-SELECT cron.schedule(
-    'refresh_dashboard_stats',
-    '5 * * * *',  -- Every hour at :05
-    $$SELECT refresh_traffic_stats()$$
-);
+CREATE OR REPLACE FUNCTION reindex_gin_indexes()
+RETURNS TABLE(result TEXT) AS $$
+BEGIN
+    -- Reindex request body GIN index
+    EXECUTE 'REINDEX INDEX CONCURRENTLY idx_traffic_logs_request_body_gin';
+    RETURN QUERY SELECT 'Reindexed idx_traffic_logs_request_body_gin'::TEXT;
+    
+    -- Reindex response body GIN index
+    EXECUTE 'REINDEX INDEX CONCURRENTLY idx_traffic_logs_response_body_gin';
+    RETURN QUERY SELECT 'Reindexed idx_traffic_logs_response_body_gin'::TEXT;
+    
+    -- Reindex diff report GIN index
+    EXECUTE 'REINDEX INDEX CONCURRENTLY idx_replay_results_diff_gin';
+    RETURN QUERY SELECT 'Reindexed idx_replay_results_diff_gin'::TEXT;
+END;
+$$ LANGUAGE plpgsql;
 
--- ── Job 3: Cleanup old partitions (Run monthly) ────────────────────────────
--- Remove partitions based on retention policy
--- Pro tier: 30 days, Enterprise: 90 days
--- Recommended schedule: First day of month at 3 AM
--- Cron expression: 0 3 1 * *
+-- ── Schedule Maintenance Jobs (Only if pg_cron is available) ───────────────
+-- These commands will only execute if pg_cron extension is enabled
 
--- NOTE: Adjust retention_days based on subscription tier
--- This example uses 90 days for enterprise, 30 for pro
--- You'll need to implement tier-based logic in your application
-
-SELECT cron.schedule(
-    'cleanup_old_traffic_partitions',
-    '0 3 1 * *',  -- First day of month at 3 AM
-    $$SELECT * FROM drop_old_traffic_partitions(90)$$  -- Change to your retention policy
-);
-
--- ── Job 4: Vacuum analyze on high-churn tables (Run daily) ─────────────────
--- Ensure query planner has fresh statistics
--- Recommended schedule: Every day at 1 AM
--- Cron expression: 0 1 * * *
-
-SELECT cron.schedule(
-    'vacuum_analyze_traffic',
-    '0 1 * * *',  -- Every day at 1 AM
-    $$VACUUM ANALYZE traffic_logs$$
-);
-
--- ── Job 5: Reindex GIN indexes (Run weekly) ────────────────────────────────
--- GIN indexes can become bloated, periodic reindexing helps
--- Recommended schedule: Every Sunday at 4 AM
--- Cron expression: 0 4 * * 0
-
-SELECT cron.schedule(
-    'reindex_jsonb_indexes',
-    '0 4 * * 0',  -- Every Sunday at 4 AM
-    $$
-    REINDEX INDEX CONCURRENTLY idx_traffic_logs_request_body_gin;
-    REINDEX INDEX CONCURRENTLY idx_traffic_logs_response_body_gin;
-    REINDEX INDEX CONCURRENTLY idx_replay_results_diff_gin;
-    $$
-);
+DO $$
+BEGIN
+    -- Check if pg_cron is available
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+        
+        -- Job 1: Auto-create future partitions (Run weekly)
+        -- Creates 3 months of future partitions to ensure we never run out
+        -- Schedule: Every Monday at 2 AM (0 2 * * 1)
+        PERFORM cron.schedule(
+            'create_future_traffic_partitions',
+            '0 2 * * 1',
+            $$SELECT * FROM create_next_traffic_partitions(3)$$
+        );
+        
+        -- Job 2: Refresh materialized views (Run hourly)
+        -- Keep dashboard statistics up to date
+        -- Schedule: Every hour at :05 (5 * * * *)
+        PERFORM cron.schedule(
+            'refresh_dashboard_stats',
+            '5 * * * *',
+            $$SELECT refresh_traffic_stats()$$
+        );
+        
+        -- Job 3: Cleanup old partitions (Run monthly)
+        -- Remove partitions based on retention policy
+        -- Schedule: First day of month at 3 AM (0 3 1 * *)
+        -- NOTE: Adjust retention_days (90) based on your subscription tier
+        PERFORM cron.schedule(
+            'cleanup_old_traffic_partitions',
+            '0 3 1 * *',
+            $$SELECT * FROM drop_old_traffic_partitions(90)$$
+        );
+        
+        -- Job 4: Vacuum analyze on high-churn tables (Run daily)
+        -- Ensure query planner has fresh statistics
+        -- Schedule: Every day at 1 AM (0 1 * * *)
+        PERFORM cron.schedule(
+            'vacuum_analyze_traffic',
+            '0 1 * * *',
+            $$VACUUM ANALYZE traffic_logs$$
+        );
+        
+        -- Job 5: Reindex GIN indexes (Run weekly)
+        -- GIN indexes can become bloated, periodic reindexing helps
+        -- Schedule: Every Sunday at 4 AM (0 4 * * 0)
+        PERFORM cron.schedule(
+            'reindex_jsonb_indexes',
+            '0 4 * * 0',
+            $$SELECT * FROM reindex_gin_indexes()$$
+        );
+        
+        RAISE NOTICE 'All maintenance jobs scheduled successfully';
+    ELSE
+        RAISE NOTICE 'pg_cron extension not available. Maintenance jobs NOT scheduled.';
+        RAISE NOTICE 'See manual scheduling options at the end of this file.';
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error scheduling maintenance jobs: %. Jobs NOT scheduled.', SQLERRM;
+END $$;
 
 -- ── View scheduled jobs ─────────────────────────────────────────────────────
 

@@ -32,6 +32,25 @@ CREATE TABLE IF NOT EXISTS traffic_logs_2027_02 PARTITION OF traffic_logs
 CREATE TABLE IF NOT EXISTS traffic_logs_2027_03 PARTITION OF traffic_logs
   FOR VALUES FROM ('2027-03-01') TO ('2027-04-01');
 
+-- ── Vacuum and Analyze Settings Function ───────────────────────────────────
+-- These are tuned for high-write workload on traffic_logs
+-- Note: Must be applied to individual partitions, not the parent table
+
+CREATE OR REPLACE FUNCTION apply_traffic_logs_storage_params(partition_name TEXT)
+RETURNS VOID AS $$
+BEGIN
+    EXECUTE format(
+        'ALTER TABLE %I SET (
+            autovacuum_vacuum_scale_factor = 0.05,
+            autovacuum_analyze_scale_factor = 0.02,
+            autovacuum_vacuum_cost_delay = 10,
+            autovacuum_vacuum_cost_limit = 1000
+        )',
+        partition_name
+    );
+END;
+$$ LANGUAGE plpgsql;
+
 -- ── Automated Partition Management Function ─────────────────────────────────
 
 CREATE OR REPLACE FUNCTION create_traffic_partition(start_date DATE)
@@ -63,6 +82,9 @@ BEGIN
          FOR VALUES FROM (%L) TO (%L)',
         partition_name, start_date, end_date
     );
+    
+    -- Apply storage parameters to the new partition
+    PERFORM apply_traffic_logs_storage_params(partition_name);
     
     RETURN 'Created partition ' || partition_name || ' for range ' || 
            start_date || ' to ' || end_date;
@@ -208,15 +230,22 @@ ALTER TABLE traffic_logs ALTER COLUMN path SET STATISTICS 1000;
 ALTER TABLE traffic_logs ALTER COLUMN status_code SET STATISTICS 1000;
 ALTER TABLE traffic_logs ALTER COLUMN timestamp SET STATISTICS 1000;
 
--- ── Vacuum and Analyze Settings ─────────────────────────────────────────────
--- These are tuned for high-write workload on traffic_logs
-
-ALTER TABLE traffic_logs SET (
-    autovacuum_vacuum_scale_factor = 0.05,      -- More aggressive vacuum
-    autovacuum_analyze_scale_factor = 0.02,     -- More frequent analyze
-    autovacuum_vacuum_cost_delay = 10,          -- Faster vacuum
-    autovacuum_vacuum_cost_limit = 1000        -- Higher work limit
-);
+-- Apply storage parameters to all existing traffic_logs partitions
+DO $$
+DECLARE
+    partition_record RECORD;
+BEGIN
+    FOR partition_record IN
+        SELECT c.relname
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname LIKE 'traffic_logs_%'
+        AND n.nspname = 'public'
+        AND c.relname ~ '^traffic_logs_[0-9]{4}_[0-9]{2}$'
+    LOOP
+        PERFORM apply_traffic_logs_storage_params(partition_record.relname);
+    END LOOP;
+END $$;
 
 -- ── Materialized View for Dashboard Stats ───────────────────────────────────
 -- Pre-compute expensive aggregations for dashboard
