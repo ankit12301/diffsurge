@@ -55,7 +55,7 @@ BEGIN
         PERFORM cron.schedule(
             'create_future_traffic_partitions',
             '0 2 * * 1',
-            $$SELECT * FROM create_next_traffic_partitions(3)$$
+            $cmd$SELECT * FROM create_next_traffic_partitions(3)$cmd$
         );
         
         -- Job 2: Refresh materialized views (Run hourly)
@@ -64,7 +64,7 @@ BEGIN
         PERFORM cron.schedule(
             'refresh_dashboard_stats',
             '5 * * * *',
-            $$SELECT refresh_traffic_stats()$$
+            $cmd$SELECT refresh_traffic_stats()$cmd$
         );
         
         -- Job 3: Cleanup old partitions (Run monthly)
@@ -74,7 +74,7 @@ BEGIN
         PERFORM cron.schedule(
             'cleanup_old_traffic_partitions',
             '0 3 1 * *',
-            $$SELECT * FROM drop_old_traffic_partitions(90)$$
+            $cmd$SELECT * FROM drop_old_traffic_partitions(90)$cmd$
         );
         
         -- Job 4: Vacuum analyze on high-churn tables (Run daily)
@@ -83,7 +83,7 @@ BEGIN
         PERFORM cron.schedule(
             'vacuum_analyze_traffic',
             '0 1 * * *',
-            $$VACUUM ANALYZE traffic_logs$$
+            $cmd$VACUUM ANALYZE traffic_logs$cmd$
         );
         
         -- Job 5: Reindex GIN indexes (Run weekly)
@@ -92,7 +92,7 @@ BEGIN
         PERFORM cron.schedule(
             'reindex_jsonb_indexes',
             '0 4 * * 0',
-            $$SELECT * FROM reindex_gin_indexes()$$
+            $cmd$SELECT * FROM reindex_gin_indexes()$cmd$
         );
         
         RAISE NOTICE 'All maintenance jobs scheduled successfully';
