@@ -97,7 +97,7 @@ func TestPIIPipelineEndToEnd(t *testing.T) {
 				"email":       "john.doe@example.com",
 				"phone":       "555-123-4567",
 				"ssn":         "123-45-6789",
-				"credit_card": "4532-1234-5678-9010",
+				"credit_card": "4111-1111-1111-1111",
 				"address":     "123 Main St",
 			},
 		}
@@ -173,7 +173,7 @@ func TestPIIPipelineEndToEnd(t *testing.T) {
 		retrievedJSON, _ := json.Marshal(retrieved.RequestBody)
 		assert.NotContains(t, string(retrievedJSON), "john.doe@example.com", "Original email should not be present")
 		assert.NotContains(t, string(retrievedJSON), "123-45-6789", "Original SSN should not be present")
-		assert.NotContains(t, string(retrievedJSON), "4532-1234-5678-9010", "Original credit card should not be present")
+		assert.NotContains(t, string(retrievedJSON), "4111-1111-1111-1111", "Original credit card should not be present")
 	})
 
 	t.Run("No PII Detection in Safe Data", func(t *testing.T) {
@@ -318,7 +318,7 @@ func BenchmarkPIIRedaction(b *testing.B) {
 		RequestBody: map[string]interface{}{
 			"email":       "test@example.com",
 			"phone":       "555-123-4567",
-			"credit_card": "4532-1234-5678-9010",
+			"credit_card": "4111-1111-1111-1111",
 		},
 		ResponseBody: map[string]interface{}{
 			"status":  "success",
