@@ -33,10 +33,10 @@ func TestRateLimitMiddleware_AllowsWithinLimit(t *testing.T) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	}))
 
 	req := httptest.NewRequest("GET", "/api/v1/projects", nil)
@@ -51,7 +51,7 @@ func TestRateLimitMiddleware_AllowsWithinLimit(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "success", w.Body.String())
-	
+
 	// Check rate limit headers
 	assert.Equal(t, "1000", w.Header().Get("X-RateLimit-Limit"))
 	assert.Equal(t, "999", w.Header().Get("X-RateLimit-Remaining"))
@@ -68,10 +68,10 @@ func TestRateLimitMiddleware_BlocksWhenExceeded(t *testing.T) {
 		Return(false, int64(101), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	}))
 
 	req := httptest.NewRequest("GET", "/api/v1/projects", nil)
@@ -85,7 +85,7 @@ func TestRateLimitMiddleware_BlocksWhenExceeded(t *testing.T) {
 
 	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 	assert.Contains(t, w.Body.String(), "Rate limit exceeded")
-	
+
 	// Check rate limit headers
 	assert.Equal(t, "100", w.Header().Get("X-RateLimit-Limit"))
 	assert.Equal(t, "0", w.Header().Get("X-RateLimit-Remaining"))
@@ -129,7 +129,7 @@ func TestRateLimitMiddleware_TierSpecificLimits(t *testing.T) {
 				Return(true, int64(1), nil)
 
 			middleware := RateLimitMiddleware(limiter, config, log)
-			
+
 			handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}))
@@ -164,7 +164,7 @@ func TestRateLimitMiddleware_AuthEndpointsStricterLimit(t *testing.T) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -186,10 +186,10 @@ func TestRateLimitMiddleware_SkipsHealthChecks(t *testing.T) {
 	log := logger.New("error", "json")
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("healthy"))
+		_, _ = w.Write([]byte("healthy"))
 	}))
 
 	tests := []string{"/health", "/ready"}
@@ -202,7 +202,7 @@ func TestRateLimitMiddleware_SkipsHealthChecks(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, w.Code)
 			assert.Equal(t, "healthy", w.Body.String())
-			
+
 			// Verify rate limiter was not called
 			limiter.AssertNotCalled(t, "CheckRateLimit")
 		})
@@ -272,7 +272,7 @@ func TestRateLimitMiddleware_UnauthenticatedRequest(t *testing.T) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -304,7 +304,7 @@ func TestRateLimitMiddleware_SchemaUpload(t *testing.T) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -336,7 +336,7 @@ func TestRateLimitMiddleware_ReplayStart(t *testing.T) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -363,7 +363,7 @@ func BenchmarkRateLimitMiddleware(b *testing.B) {
 		Return(true, int64(1), nil)
 
 	middleware := RateLimitMiddleware(limiter, config, log)
-	
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))

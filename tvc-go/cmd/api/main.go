@@ -26,7 +26,9 @@ func main() {
 
 	port := 8080
 	if envPort := os.Getenv("PORT"); envPort != "" {
-		fmt.Sscanf(envPort, "%d", &port)
+		if _, err := fmt.Sscanf(envPort, "%d", &port); err != nil {
+			log.Warn().Err(err).Str("PORT", envPort).Msg("Invalid PORT, using default")
+		}
 	} else if cfg != nil && cfg.Server.Port != 0 {
 		port = cfg.Server.Port
 	}

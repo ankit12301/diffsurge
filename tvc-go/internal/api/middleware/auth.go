@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	UserIDKey   contextKey = "user_id"
+	UserIDKey    contextKey = "user_id"
 	UserEmailKey contextKey = "user_email"
 	UserRoleKey  contextKey = "user_role"
 )
@@ -115,7 +115,7 @@ func (a *Auth) validateAPIKey(r *http.Request, fullKey string) error {
 	}
 
 	prefix := fullKey[:16]
-	
+
 	// Lookup key by prefix
 	apiKey, err := a.store.GetAPIKeyByHash(r.Context(), prefix)
 	if err != nil {
@@ -133,7 +133,9 @@ func (a *Auth) validateAPIKey(r *http.Request, fullKey string) error {
 	}
 
 	// Update last used timestamp (async, don't wait)
-	go a.store.UpdateAPIKeyLastUsed(context.Background(), apiKey.ID)
+	go func() {
+		_ = a.store.UpdateAPIKeyLastUsed(context.Background(), apiKey.ID)
+	}()
 
 	// Set org context from API key
 	ctx := context.WithValue(r.Context(), UserIDKey, apiKey.OrganizationID)

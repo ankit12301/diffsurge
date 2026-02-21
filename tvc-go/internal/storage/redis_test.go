@@ -17,7 +17,7 @@ func setupTestRedis(t *testing.T) (*RedisStore, *miniredis.Miniredis) {
 	t.Helper()
 
 	mr := miniredis.RunT(t)
-	
+
 	client := redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	})
@@ -309,7 +309,7 @@ func TestRedisStore_ResetRateLimit(t *testing.T) {
 
 	// Use up the limit
 	for i := 0; i < 2; i++ {
-		store.CheckRateLimit(ctx, key, limit, window)
+		_, _, _ = store.CheckRateLimit(ctx, key, limit, window)
 	}
 
 	// Should be at limit
@@ -412,7 +412,7 @@ func TestRedisStore_PublishSubscribe(t *testing.T) {
 	msg, err := pubsub.ReceiveMessage(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, channel, msg.Channel)
-	
+
 	// Should contain the marshaled message
 	assert.Contains(t, msg.Payload, "test")
 	assert.Contains(t, msg.Payload, "hello")

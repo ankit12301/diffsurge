@@ -31,11 +31,11 @@ func (h *TrafficHandler) List(w http.ResponseWriter, r *http.Request) {
 	pagination := request.ParsePagination(r)
 
 	filter := storage.TrafficFilter{
-		ProjectID: projectID,
-		Methods:   request.QueryStringSlice(r, "methods"),
-		Paths:     request.QueryStringSlice(r, "paths"),
+		ProjectID:   projectID,
+		Methods:     request.QueryStringSlice(r, "methods"),
+		Paths:       request.QueryStringSlice(r, "paths"),
 		StatusCodes: request.QueryIntSlice(r, "status_codes"),
-		Limit:     pagination.Limit + 1, // fetch one extra to determine has_more
+		Limit:       pagination.Limit + 1, // fetch one extra to determine has_more
 	}
 
 	if start := request.QueryTime(r, "start_time"); start != nil {

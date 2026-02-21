@@ -42,11 +42,11 @@ func generateAPIKey() (string, string, error) {
 	if _, err := rand.Read(randomBytes); err != nil {
 		return "", "", err
 	}
-	
+
 	keySecret := base64.RawURLEncoding.EncodeToString(randomBytes)
 	fullKey := "tvc_live_" + keySecret
 	prefix := fullKey[:16] // Store prefix for display (tvc_live_ + first 6 chars)
-	
+
 	return fullKey, prefix, nil
 }
 

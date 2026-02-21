@@ -20,10 +20,10 @@ export default function VerifyEmailPage() {
   const [verified, setVerified] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     const checkAuth = async () => {
+      const supabase = createClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -41,12 +41,13 @@ export default function VerifyEmailPage() {
     };
 
     checkAuth();
-  }, [supabase]);
+  }, []);
 
   const handleResend = async () => {
     if (!email) return;
 
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,

@@ -52,6 +52,7 @@ func TestPIIPipelineEndToEnd(t *testing.T) {
 		ID:             uuid.New(),
 		OrganizationID: org.ID,
 		Name:           "Test Project",
+		Slug:           "test-project",
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -92,12 +93,12 @@ func TestPIIPipelineEndToEnd(t *testing.T) {
 		// Create a request with PII data
 		requestBodyWithPII := map[string]interface{}{
 			"user": map[string]interface{}{
-				"name":         "John Doe",
-				"email":        "john.doe@example.com",
-				"phone":        "555-123-4567",
-				"ssn":          "123-45-6789",
-				"credit_card":  "4532-1234-5678-9010",
-				"address":      "123 Main St",
+				"name":        "John Doe",
+				"email":       "john.doe@example.com",
+				"phone":       "555-123-4567",
+				"ssn":         "123-45-6789",
+				"credit_card": "4532-1234-5678-9010",
+				"address":     "123 Main St",
 			},
 		}
 
@@ -112,7 +113,7 @@ func TestPIIPipelineEndToEnd(t *testing.T) {
 					"email":   "john.doe@example.com", // PII in response too
 				},
 			}
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 		}))
 		defer simulatedBackend.Close()
 
@@ -269,7 +270,7 @@ func containsRedactionMarker(data interface{}) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	// Check for common redaction markers
 	markers := []string{
 		"[REDACTED]",
@@ -279,13 +280,13 @@ func containsRedactionMarker(data interface{}) bool {
 		"[SSN_REDACTED]",
 		"[CARD_REDACTED]",
 	}
-	
+
 	for _, marker := range markers {
 		if bytes.Contains(jsonBytes, []byte(marker)) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -320,7 +321,7 @@ func BenchmarkPIIRedaction(b *testing.B) {
 			"credit_card": "4532-1234-5678-9010",
 		},
 		ResponseBody: map[string]interface{}{
-			"status": "success",
+			"status":  "success",
 			"user_id": "u_12345",
 		},
 		Timestamp: time.Now(),

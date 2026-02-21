@@ -23,11 +23,11 @@ type UserOrganization struct {
 
 // OrganizationMember represents a member with their user details
 type OrganizationMember struct {
-	UserID    uuid.UUID `json:"user_id"`
-	Email     string    `json:"email"`
-	FullName  string    `json:"full_name,omitempty"`
-	Role      string    `json:"role"`
-	JoinedAt  time.Time `json:"joined_at"`
+	UserID   uuid.UUID `json:"user_id"`
+	Email    string    `json:"email"`
+	FullName string    `json:"full_name,omitempty"`
+	Role     string    `json:"role"`
+	JoinedAt time.Time `json:"joined_at"`
 }
 
 type Subscription struct {

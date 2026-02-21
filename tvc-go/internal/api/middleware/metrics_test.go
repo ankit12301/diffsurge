@@ -18,7 +18,7 @@ func TestPrometheusMiddleware(t *testing.T) {
 
 	handler := PrometheusMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test response"))
+		_, _ = w.Write([]byte("test response"))
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -159,7 +159,7 @@ func TestMetricsHelpers(t *testing.T) {
 func BenchmarkPrometheusMiddleware(b *testing.B) {
 	handler := PrometheusMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("benchmark"))
+		_, _ = w.Write([]byte("benchmark"))
 	}))
 
 	req := httptest.NewRequest("GET", "/benchmark", nil)

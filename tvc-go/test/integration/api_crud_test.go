@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -87,9 +88,12 @@ func runMigrations(t *testing.T, connStr string) {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
 			name VARCHAR(255) NOT NULL,
+			slug VARCHAR(100) NOT NULL,
 			description TEXT,
+			config JSONB DEFAULT '{}',
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			UNIQUE (organization_id, slug)
 		)`,
 		`CREATE TABLE IF NOT EXISTS environments (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,12 +103,47 @@ func runMigrations(t *testing.T, connStr string) {
 			is_source BOOLEAN NOT NULL DEFAULT false,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 		)`,
+		`CREATE TABLE IF NOT EXISTS traffic_logs (
+			id UUID DEFAULT gen_random_uuid(),
+			project_id UUID NOT NULL,
+			environment_id UUID NOT NULL,
+			method VARCHAR(10) NOT NULL,
+			path TEXT NOT NULL,
+			query_params JSONB,
+			request_headers JSONB,
+			request_body JSONB,
+			status_code INTEGER NOT NULL,
+			response_headers JSONB,
+			response_body JSONB,
+			timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+			latency_ms INTEGER,
+			ip_address INET,
+			user_agent TEXT,
+			pii_redacted BOOLEAN DEFAULT false,
+			PRIMARY KEY (id, timestamp)
+		)`,
 	}
 
 	for _, migration := range migrations {
 		_, err := db.ExecContext(ctx, migration)
 		require.NoError(t, err)
 	}
+}
+
+const testJWTSecret = "test-secret"
+
+func generateTestJWT(userID uuid.UUID) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  userID.String(),
+		"role": "owner",
+		"exp":  time.Now().Add(time.Hour).Unix(),
+	})
+	tokenStr, _ := token.SignedString([]byte(testJWTSecret))
+	return tokenStr
+}
+
+func addAuth(req *http.Request, token string) {
+	req.Header.Set("Authorization", "Bearer "+token)
 }
 
 // TestAPICRUDLifecycle tests the full CRUD lifecycle for projects and environments
@@ -131,13 +170,16 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		Store: store,
 		Log:   log,
 		AuthConfig: middleware.AuthConfig{
-			JWTSecret: "test-secret",
+			JWTSecret: testJWTSecret,
 		},
 	}
 	router := api.NewRouter(deps)
 
-	// Create test organization
+	// Create test organization and auth token
 	ctx := context.Background()
+	userID := uuid.New()
+	authToken := generateTestJWT(userID)
+
 	org := &models.Organization{
 		ID:        uuid.New(),
 		Name:      "Test Org",
@@ -151,12 +193,13 @@ func TestAPICRUDLifecycle(t *testing.T) {
 	t.Run("Project CRUD", func(t *testing.T) {
 		// CREATE: Create a new project
 		createReq := map[string]interface{}{
-			"name":        "Test Project",
-			"description": "Integration test project",
+			"name":            "Test Project",
+			"description":     "Integration test project",
+			"organization_id": org.ID.String(),
 		}
 		body, _ := json.Marshal(createReq)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/projects", bytes.NewReader(body))
-		req.SetPathValue("org_id", org.ID.String())
+		addAuth(req, authToken)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -170,7 +213,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 
 		// READ: Get the project
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s", projectID), nil)
-		req.SetPathValue("id", projectID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -188,14 +231,16 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		}
 		body, _ = json.Marshal(updateReq)
 		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v1/projects/%s", projectID), bytes.NewReader(body))
-		req.SetPathValue("id", projectID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		// LIST: List projects
-		req = httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
+		req = httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/projects?organization_id=%s", org.ID), nil)
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -209,7 +254,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 
 		// DELETE: Delete the project
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/projects/%s", projectID), nil)
-		req.SetPathValue("id", projectID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -217,7 +262,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 
 		// Verify deletion
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/projects/%s", projectID), nil)
-		req.SetPathValue("id", projectID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -230,6 +275,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 			ID:             uuid.New(),
 			OrganizationID: org.ID,
 			Name:           "Test Project for Env",
+			Slug:           "test-project-for-env",
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
 		}
@@ -246,7 +292,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost,
 			fmt.Sprintf("/api/v1/projects/%s/environments", project.ID),
 			bytes.NewReader(body))
-		req.SetPathValue("id", project.ID.String())
+		addAuth(req, authToken)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -255,7 +301,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		// LIST: List environments
 		req = httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/projects/%s/environments", project.ID), nil)
-		req.SetPathValue("id", project.ID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -276,8 +322,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut,
 			fmt.Sprintf("/api/v1/projects/%s/environments/%s", project.ID, envID),
 			bytes.NewReader(body))
-		req.SetPathValue("id", project.ID.String())
-		req.SetPathValue("envId", envID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -286,8 +331,7 @@ func TestAPICRUDLifecycle(t *testing.T) {
 		// DELETE: Delete environment
 		req = httptest.NewRequest(http.MethodDelete,
 			fmt.Sprintf("/api/v1/projects/%s/environments/%s", project.ID, envID), nil)
-		req.SetPathValue("id", project.ID.String())
-		req.SetPathValue("envId", envID.String())
+		addAuth(req, authToken)
 		w = httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
