@@ -1,0 +1,34 @@
+{
+  "name": "driftsurge",
+  "version": "0.1.0",
+  "description": "Driftsurge CLI — API traffic capture, diff, schema comparison, and replay",
+  "keywords": [
+    "api",
+    "traffic",
+    "diff",
+    "schema",
+    "replay",
+    "testing",
+    "proxy",
+    "cli"
+  ],
+  "homepage": "https://github.com/ankit12301/tvc#readme",
+  "bugs": {
+    "url": "https://github.com/ankit12301/tvc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ankit12301/tvc.git"
+  },
+  "license": "MIT",
+  "author": "Ankit Mahopatra",
+  "bin": {
+    "surge": "bin/surge"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
