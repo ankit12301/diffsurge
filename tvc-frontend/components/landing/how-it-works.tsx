@@ -29,10 +29,11 @@ const steps = [
     description:
       "Deploy the proxy as a sidecar or standalone container. It samples real traffic, strips PII, and buffers asynchronously — adding less than 5 ms of latency to the request path.",
     code: `# Deploy via Docker
-$ docker run -d equixankit/driftsurge-proxy \\
+$ docker run -d \\
     -e TVC_STORAGE_POSTGRES_URL=... \\
     -e TVC_STORAGE_REDIS_URL=... \\
-    -p 8081:8080
+    -p 8081:8080 \\
+    equixankit/driftsurge-proxy
 
   ▸ Proxy listening on :8080
   ▸ Sampling 10% of traffic

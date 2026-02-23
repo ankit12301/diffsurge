@@ -98,6 +98,7 @@ func NewRouter(deps ServerDeps) http.Handler {
 	handler = middleware.Recovery(deps.Log)(handler)
 	handler = middleware.Logging(deps.Log)(handler)
 	handler = middleware.RequestID(handler)
+	handler = middleware.SecurityHeadersMiddleware(nil)(handler)
 	handler = middleware.CORS(middleware.DefaultCORSConfig())(handler)
 
 	return handler

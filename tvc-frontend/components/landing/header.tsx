@@ -104,11 +104,20 @@ export function Header() {
               </Button>
             </Link>
           ) : (
-            <Link href="/signup">
-              <Button size="sm" className="btn-gradient border-0 text-white w-full">
-                Get Started
-              </Button>
-            </Link>
+            <>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+              >
+                Log in
+              </Link>
+              <Link href="/signup" onClick={() => setOpen(false)}>
+                <Button size="sm" className="btn-gradient border-0 text-white w-full">
+                  Get Started
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>

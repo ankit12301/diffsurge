@@ -3,17 +3,17 @@ export const siteConfig = {
   tagline: "Catch breaking API changes before your users do",
   description:
     "Driftsurge captures production traffic, replays it against new deployments, and surfaces breaking changes — before a single user is affected. Schema diffing, traffic replay, and drift reports in one CLI.",
-  url: "https://driftsurge.dev",
-  github: "https://github.com/driftsurge/driftsurge",
-  docs: "https://docs.driftsurge.dev",
+  url: "https://driftsurge.vercel.app",
+  github: "https://github.com/ankit12301/tvc",
+  docs: "https://github.com/ankit12301/tvc#readme",
 } as const;
 
 export const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How it Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Docs", href: "/docs" },
-  { label: "GitHub", href: "https://github.com/driftsurge/driftsurge" },
+  { label: "Docs", href: "https://github.com/ankit12301/tvc#readme" },
+  { label: "GitHub", href: "https://github.com/ankit12301/tvc" },
 ] as const;
 
 export const stats = [

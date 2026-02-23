@@ -4,24 +4,19 @@ const footerLinks = {
   Product: [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
-    { label: "Changelog", href: "/changelog" },
-    { label: "Roadmap", href: "/roadmap" },
+    { label: "How it Works", href: "#how-it-works" },
   ],
   Developers: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API Reference", href: "/docs/api" },
-    { label: "CLI Reference", href: "/docs/cli" },
+    { label: "Documentation", href: siteConfig.docs },
+    { label: "CLI Reference", href: siteConfig.docs },
     { label: "GitHub", href: siteConfig.github },
+    { label: "Docker Hub", href: "https://hub.docker.com/u/equixankit" },
   ],
   Company: [
-    { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Contact", href: "/contact" },
+    { label: "Contact", href: `mailto:ankit@driftsurge.dev` },
   ],
   Legal: [
-    { label: "Privacy", href: "/privacy" },
-    { label: "Terms", href: "/terms" },
-    { label: "Security", href: "/security" },
+    { label: "MIT License", href: `${siteConfig.github}/blob/main/LICENSE` },
   ],
 };
 
