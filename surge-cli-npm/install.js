@@ -3,12 +3,7 @@
 const os = require("os");
 const fs = require("fs");
 const path = require("path");
-const https = require("https");
-const { execSync } = require("child_process");
-
-const VERSION = "0.1.0";
-const REPO = "ankit12301/tvc";
-const BASE_URL = `https://github.com/${REPO}/releases/download/v${VERSION}`;
+const zlib = require("zlib");
 
 function getPlatformBinary() {
   const platform = os.platform();
@@ -37,63 +32,37 @@ function getPlatformBinary() {
   return binary;
 }
 
-function download(url, dest) {
-  return new Promise((resolve, reject) => {
-    const follow = (url, redirects = 0) => {
-      if (redirects > 5) return reject(new Error("Too many redirects"));
-
-      https
-        .get(url, (res) => {
-          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            return follow(res.headers.location, redirects + 1);
-          }
-          if (res.statusCode !== 200) {
-            return reject(new Error(`Download failed: HTTP ${res.statusCode}`));
-          }
-
-          const file = fs.createWriteStream(dest);
-          res.pipe(file);
-          file.on("finish", () => file.close(resolve));
-          file.on("error", reject);
-        })
-        .on("error", reject);
-    };
-
-    follow(url);
-  });
-}
-
-async function main() {
+function main() {
   const binaryName = getPlatformBinary();
-  const url = `${BASE_URL}/${binaryName}`;
-  const binDir = path.join(__dirname, "bin");
   const isWindows = os.platform() === "win32";
+  const binDir = path.join(__dirname, "bin");
   const dest = path.join(binDir, isWindows ? "surge.exe" : "surge");
 
   if (fs.existsSync(dest)) {
-    console.log("surge binary already installed");
     return;
+  }
+
+  const gzPath = path.join(__dirname, "binaries", `${binaryName}.gz`);
+
+  if (!fs.existsSync(gzPath)) {
+    console.error(`Binary not found: ${gzPath}`);
+    console.error(`Use Docker instead: docker run equixankit/driftsurge-cli`);
+    process.exit(1);
   }
 
   fs.mkdirSync(binDir, { recursive: true });
 
-  console.log(`Downloading surge v${VERSION} for ${os.platform()}-${os.arch()}...`);
-  console.log(`  ${url}`);
+  console.log(`Installing surge for ${os.platform()}-${os.arch()}...`);
 
-  try {
-    await download(url, dest);
-    if (!isWindows) {
-      fs.chmodSync(dest, 0o755);
-    }
-    console.log("surge installed successfully!");
-  } catch (err) {
-    console.error(`\nFailed to download surge binary: ${err.message}`);
-    console.error(`\nAlternatives:`);
-    console.error(`  1. Download manually from: https://github.com/${REPO}/releases`);
-    console.error(`  2. Use Docker: docker run equixankit/driftsurge-cli`);
-    console.error(`  3. Build from source: cd tvc-go && make build-cli`);
-    process.exit(1);
+  const compressed = fs.readFileSync(gzPath);
+  const decompressed = zlib.gunzipSync(compressed);
+  fs.writeFileSync(dest, decompressed);
+
+  if (!isWindows) {
+    fs.chmodSync(dest, 0o755);
   }
+
+  console.log("surge installed successfully!");
 }
 
 main();
