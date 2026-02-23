@@ -3,20 +3,15 @@ import { siteConfig } from "@/lib/constants";
 const footerLinks = {
   Product: [
     { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
     { label: "How it Works", href: "#how-it-works" },
+    { label: "Documentation", href: "/docs" },
   ],
   Developers: [
-    { label: "Documentation", href: siteConfig.docs },
-    { label: "CLI Reference", href: siteConfig.docs },
-    { label: "GitHub", href: siteConfig.github },
+    { label: "CLI Reference", href: "/docs" },
     { label: "Docker Hub", href: "https://hub.docker.com/u/equixankit" },
   ],
   Company: [
-    { label: "Contact", href: `mailto:ankit@driftsurge.dev` },
-  ],
-  Legal: [
-    { label: "MIT License", href: `${siteConfig.github}/blob/main/LICENSE` },
+    { label: "Contact", href: "/contact" },
   ],
 };
 
@@ -71,16 +66,10 @@ export function Footer() {
           </p>
           <div className="flex gap-5">
             <a
-              href={siteConfig.github}
+              href="https://hub.docker.com/u/equixankit"
               className="text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors"
             >
-              GitHub
-            </a>
-            <a
-              href="https://x.com/driftsurge"
-              className="text-[11px] text-zinc-600 hover:text-zinc-300 transition-colors"
-            >
-              X / Twitter
+              Docker Hub
             </a>
           </div>
         </div>

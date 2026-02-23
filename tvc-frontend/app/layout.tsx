@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     "CI/CD integration",
     "API regression testing",
   ],
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

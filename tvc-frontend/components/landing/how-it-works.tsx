@@ -5,9 +5,31 @@ import { FadeIn } from "@/components/ui/fade-in";
 const steps = [
   {
     number: "01",
+    title: "Install the CLI",
+    description:
+      "One command, zero dependencies. Install the Surge CLI globally via npm or run it directly with Docker. Works on macOS, Linux, and Windows.",
+    code: `# Install via npm
+$ npm install -g driftsurge
+
+  added 1 package in 2.1s
+
+# Or run via Docker
+$ docker run equixankit/driftsurge-cli --help
+
+  surge — Catch breaking API changes
+  before your users do
+
+  Commands:
+    diff       Compare two JSON files
+    schema     Schema management commands
+    replay     Replay traffic against a target
+    version    Print the version`,
+  },
+  {
+    number: "02",
     title: "Diff your API schemas",
     description:
-      "One binary, zero dependencies. Surge compares OpenAPI, GraphQL, and gRPC schemas — flagging every breaking change with severity and a JSON path. Perfect for CI/CD gates.",
+      "Surge compares OpenAPI, GraphQL, and gRPC schemas — flagging every breaking change with severity and a JSON path. Perfect for CI/CD gates.",
     code: `$ surge schema diff \\
     --old api-v1.yaml \\
     --new api-v2.yaml \\
@@ -24,7 +46,7 @@ const steps = [
   1 breaking · 1 warning — exit code 1`,
   },
   {
-    number: "02",
+    number: "03",
     title: "Capture production traffic",
     description:
       "Deploy the proxy as a sidecar or standalone container. It samples real traffic, strips PII, and buffers asynchronously — adding less than 5 ms of latency to the request path.",
@@ -41,7 +63,7 @@ $ docker run -d \\
   ▸ Buffer: 10,000 slots / 20 workers`,
   },
   {
-    number: "03",
+    number: "04",
     title: "Replay and compare",
     description:
       "Point the replay engine at your staging build. It fires captured requests at configurable concurrency, semantically compares every response, and produces a drift report — sorted by severity.",
@@ -68,7 +90,7 @@ export function HowItWorks() {
             How it works
           </p>
           <h2 className="mt-3 text-[1.75rem] font-bold tracking-tight sm:text-3xl">
-            Three steps to safer deployments
+            Four steps to safer deployments
           </h2>
           <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-zinc-500">
             Go from zero to production-grade API regression testing in minutes.

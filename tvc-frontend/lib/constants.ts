@@ -11,9 +11,8 @@ export const siteConfig = {
 export const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How it Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Docs", href: "https://github.com/ankit12301/tvc#readme" },
-  { label: "GitHub", href: "https://github.com/ankit12301/tvc" },
+  { label: "Docs", href: "/docs" },
+  { label: "Contact", href: "/contact" },
 ] as const;
 
 export const stats = [
