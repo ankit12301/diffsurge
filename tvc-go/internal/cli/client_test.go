@@ -19,7 +19,7 @@ func TestAPIClient_AddsAuthHeader(t *testing.T) {
 		receivedKey = r.Header.Get("X-API-Key")
 		receivedUA = r.Header.Get("User-Agent")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	}))
 	defer server.Close()
 
@@ -43,7 +43,7 @@ func TestAPIClient_PostSendsBody(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	}))
 	defer server.Close()
 
@@ -59,7 +59,7 @@ func TestAPIClient_PostSendsBody(t *testing.T) {
 func TestAPIClient_Handles401(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error":"Invalid or expired token"}`))
+		_, _ = w.Write([]byte(`{"error":"Invalid or expired token"}`))
 	}))
 	defer server.Close()
 
@@ -73,7 +73,7 @@ func TestAPIClient_Handles401(t *testing.T) {
 func TestAPIClient_Handles403(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"error":"Insufficient permissions"}`))
+		_, _ = w.Write([]byte(`{"error":"Insufficient permissions"}`))
 	}))
 	defer server.Close()
 
@@ -87,7 +87,7 @@ func TestAPIClient_Handles403(t *testing.T) {
 func TestAPIClient_Handles500(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"Internal error"}`))
+		_, _ = w.Write([]byte(`{"error":"Internal error"}`))
 	}))
 	defer server.Close()
 
@@ -101,7 +101,7 @@ func TestAPIClient_Handles500(t *testing.T) {
 func TestAPIClient_Handles404(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error":"Project not found"}`))
+		_, _ = w.Write([]byte(`{"error":"Project not found"}`))
 	}))
 	defer server.Close()
 

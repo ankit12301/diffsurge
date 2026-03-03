@@ -102,7 +102,7 @@ func TestLoadCLI_FromDotEnvFile(t *testing.T) {
 	// Save and restore CWD
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 
 	dir := t.TempDir()
 	require.NoError(t, os.Chdir(dir))
@@ -125,7 +125,7 @@ func TestLoadCLI_EnvOverridesDotEnv(t *testing.T) {
 	// Save and restore CWD
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
-	defer os.Chdir(origDir)
+	defer func() { _ = os.Chdir(origDir) }()
 
 	dir := t.TempDir()
 	require.NoError(t, os.Chdir(dir))

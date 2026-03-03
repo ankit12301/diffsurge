@@ -96,8 +96,11 @@ jobs:
           files: binaries/*
 
   npm-publish:
-    needs: release
+    needs: build-binaries
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -106,8 +109,29 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+          merge-multiple: true
+
+      - name: Package binaries for npm
+        run: |
+          mkdir -p surge-cli-npm/binaries
+          for f in binaries/surge-*; do
+            echo "Compressing $(basename $f)..."
+            gzip -c "$f" > "surge-cli-npm/binaries/$(basename $f).gz"
+          done
+          ls -la surge-cli-npm/binaries/
+
+      - name: Update version from tag
+        working-directory: surge-cli-npm
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
       - name: Publish to npm
         working-directory: surge-cli-npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
