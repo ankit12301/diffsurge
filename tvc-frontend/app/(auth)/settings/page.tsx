@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi, type Project } from "@/lib/api/projects";
 import { useOrganization } from "@/lib/providers/organization-provider";
+import { useProject } from "@/lib/providers/project-provider";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +19,7 @@ import Link from "next/link";
 
 export default function SettingsPage() {
   const { activeOrg, isLoading: orgLoading } = useOrganization();
+  const { setActiveProject } = useProject();
   const [showCreate, setShowCreate] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -45,7 +47,8 @@ export default function SettingsPage() {
       setShowCreate(false);
       setProjectName("");
       setDescription("");
-      router.push(`/dashboard?project=${project.id}`);
+      setActiveProject(project);
+      router.push("/dashboard");
     },
     onError: () => toast.error("Failed to create project"),
   });
@@ -180,9 +183,12 @@ export default function SettingsPage() {
                   key={project.id}
                   className="flex items-center justify-between rounded-lg border border-zinc-100 px-4 py-3 transition-colors hover:bg-zinc-50"
                 >
-                  <Link
-                    href={`/dashboard?project=${project.id}`}
-                    className="flex-1"
+                  <button
+                    onClick={() => {
+                      setActiveProject(project);
+                      router.push("/dashboard");
+                    }}
+                    className="flex-1 text-left"
                   >
                     <p className="text-sm font-medium text-zinc-900">
                       {project.name}
@@ -192,7 +198,7 @@ export default function SettingsPage() {
                         {project.description}
                       </p>
                     )}
-                  </Link>
+                  </button>
                   <button
                     onClick={() => deleteMutation.mutate(project.id)}
                     disabled={deleteMutation.isPending}

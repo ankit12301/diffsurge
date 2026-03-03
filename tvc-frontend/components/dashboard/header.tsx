@@ -38,7 +38,7 @@ export function DashboardHeader() {
             <User size={14} className="text-zinc-500" />
           </div>
           <span className="hidden text-[13px] sm:inline">
-            {user?.email ?? ""}
+            {user?.user_metadata?.full_name || user?.email?.split("@")[0] || ""}
           </span>
         </button>
 

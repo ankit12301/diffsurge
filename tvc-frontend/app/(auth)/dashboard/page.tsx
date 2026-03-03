@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { trafficApi } from "@/lib/api/traffic";
 import { replaysApi } from "@/lib/api/replays";
+import { useProject } from "@/lib/providers/project-provider";
 import {
   Radio,
   RefreshCw,
@@ -12,6 +11,7 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
+  FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -64,13 +64,13 @@ function EmptyDashboard() {
   return (
     <div className="flex flex-col items-center justify-center py-20">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
-        <Radio size={28} className="text-zinc-400" />
+        <FolderOpen size={28} className="text-zinc-400" />
       </div>
       <h2 className="text-lg font-semibold text-zinc-900">
-        Welcome to your dashboard
+        No project selected
       </h2>
       <p className="mt-1 max-w-sm text-center text-sm text-zinc-500">
-        Set up your first project and environment to start capturing traffic and
+        Create a project in Settings to start capturing traffic and
         detecting API drift.
       </p>
       <Link
@@ -83,9 +83,9 @@ function EmptyDashboard() {
   );
 }
 
-function DashboardPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+export default function DashboardPage() {
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
 
   const { data: stats } = useQuery({
     queryKey: ["traffic-stats", projectId],
@@ -170,7 +170,7 @@ function DashboardPageContent() {
             {replayList.slice(0, 5).map((replay) => (
               <Link
                 key={replay.id}
-                href={`/replay/${replay.id}?project=${projectId}`}
+                href={`/replay/${replay.id}`}
                 className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-zinc-50"
               >
                 <div>
@@ -200,13 +200,5 @@ function DashboardPageContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <DashboardPageContent />
-    </Suspense>
   );
 }

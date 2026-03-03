@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { replaysApi } from "@/lib/api/replays";
-import { useSearchParams } from "next/navigation";
+import { useProject } from "@/lib/providers/project-provider";
 import Link from "next/link";
 import { Plus, Play, Square } from "lucide-react";
 import { toast } from "sonner";
@@ -16,9 +15,9 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-amber-50 text-amber-700",
 };
 
-function ReplayPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+export default function ReplayPage() {
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -51,7 +50,7 @@ function ReplayPageContent() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-sm text-zinc-500">
-          Select a project to manage replays
+          Select a project from the sidebar to manage replays
         </p>
       </div>
     );
@@ -67,7 +66,7 @@ function ReplayPageContent() {
           </p>
         </div>
         <Link
-          href={`/replay/new?project=${projectId}`}
+          href={`/replay/new`}
           className="flex items-center gap-1.5 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800"
         >
           <Plus size={14} />
@@ -84,7 +83,7 @@ function ReplayPageContent() {
           <div className="py-16 text-center">
             <p className="text-sm text-zinc-500">No replay sessions yet</p>
             <Link
-              href={`/replay/new?project=${projectId}`}
+              href={`/replay/new`}
               className="mt-3 inline-flex text-sm font-medium text-zinc-700 hover:text-zinc-900"
             >
               Create your first replay
@@ -98,7 +97,7 @@ function ReplayPageContent() {
                 className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-zinc-50"
               >
                 <Link
-                  href={`/replay/${session.id}?project=${projectId}`}
+                  href={`/replay/${session.id}`}
                   className="flex-1"
                 >
                   <div className="flex items-center gap-3">
@@ -148,13 +147,5 @@ function ReplayPageContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function ReplayPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <ReplayPageContent />
-    </Suspense>
   );
 }

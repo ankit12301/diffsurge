@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { schemasApi } from "@/lib/api/schemas";
-import { useSearchParams } from "next/navigation";
+import { useProject } from "@/lib/providers/project-provider";
 import { FileCode2, Plus, GitBranch, GitCommit } from "lucide-react";
 import { toast } from "sonner";
 
-function SchemasPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+export default function SchemasPage() {
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
   const queryClient = useQueryClient();
   const [showUpload, setShowUpload] = useState(false);
   const [version, setVersion] = useState("");
@@ -51,7 +51,7 @@ function SchemasPageContent() {
   if (!projectId) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-sm text-zinc-500">Select a project to manage schemas</p>
+        <p className="text-sm text-zinc-500">Select a project from the sidebar to manage schemas</p>
       </div>
     );
   }
@@ -197,13 +197,5 @@ function SchemasPageContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function SchemasPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <SchemasPageContent />
-    </Suspense>
   );
 }

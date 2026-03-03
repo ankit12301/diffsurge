@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trafficApi, type TrafficFilters } from "@/lib/api/traffic";
-import { useSearchParams } from "next/navigation";
+import { useProject } from "@/lib/providers/project-provider";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-  Filter,
-  RefreshCw,
-} from "lucide-react";
+import { Filter, RefreshCw } from "lucide-react";
 
 const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
@@ -46,9 +43,9 @@ function MethodBadge({ method }: { method: string }) {
   );
 }
 
-function TrafficPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+export default function TrafficPage() {
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
 
   const [filters, setFilters] = useState<TrafficFilters>({});
   const [methodFilter, setMethodFilter] = useState<string>("");
@@ -67,7 +64,7 @@ function TrafficPageContent() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-sm text-zinc-500">
-          Select a project to view traffic
+          Select a project from the sidebar to view traffic
         </p>
       </div>
     );
@@ -162,7 +159,7 @@ function TrafficPageContent() {
                     </td>
                     <td className="max-w-xs truncate px-4 py-2.5 text-sm font-mono text-zinc-700">
                       <Link
-                        href={`/traffic/${log.id}?project=${projectId}`}
+                        href={`/traffic/${log.id}`}
                         className="hover:text-zinc-900 hover:underline"
                       >
                         {log.path}
@@ -200,13 +197,5 @@ function TrafficPageContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function TrafficPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <TrafficPageContent />
-    </Suspense>
   );
 }

@@ -2,8 +2,8 @@
 
 import { Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { Server, Plus, Trash2 } from "lucide-react";
+import { useProject } from "@/lib/providers/project-provider";
 import {
   Card,
   CardContent,
@@ -33,8 +33,8 @@ import { environmentsApi } from "@/lib/api/environments";
 import { toast } from "sonner";
 
 function EnvironmentsPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [formData, setFormData] = useState({

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/constants";
+import { useProject } from "@/lib/providers/project-provider";
 import {
   LayoutDashboard,
   Radio,
@@ -12,6 +13,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  FolderOpen,
+  Check,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -26,6 +30,8 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const { projects, activeProject, setActiveProject } = useProject();
 
   return (
     <aside
@@ -55,6 +61,73 @@ export function Sidebar() {
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
+
+      {/* Project Selector */}
+      {projects.length > 0 && !collapsed && (
+        <div className="relative border-b border-zinc-100 p-2">
+          <button
+            onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] transition-colors hover:bg-zinc-50"
+          >
+            <FolderOpen size={14} className="shrink-0 text-zinc-400" />
+            <span className="flex-1 truncate font-medium text-zinc-700">
+              {activeProject?.name || "Select project"}
+            </span>
+            {projects.length > 1 && (
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "shrink-0 text-zinc-400 transition-transform",
+                  projectDropdownOpen && "rotate-180"
+                )}
+              />
+            )}
+          </button>
+
+          {projectDropdownOpen && projects.length > 1 && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setProjectDropdownOpen(false)}
+              />
+              <div className="absolute left-2 right-2 top-full z-50 mt-1 rounded-lg border border-zinc-100 bg-white py-1 shadow-lg">
+                {projects.map((project) => (
+                  <button
+                    key={project.id}
+                    onClick={() => {
+                      setActiveProject(project);
+                      setProjectDropdownOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors hover:bg-zinc-50",
+                      activeProject?.id === project.id && "bg-zinc-50"
+                    )}
+                  >
+                    <span className="flex-1 truncate text-zinc-700">
+                      {project.name}
+                    </span>
+                    {activeProject?.id === project.id && (
+                      <Check size={14} className="shrink-0 text-zinc-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Collapsed project indicator */}
+      {projects.length > 0 && collapsed && activeProject && (
+        <div className="border-b border-zinc-100 p-2">
+          <div
+            className="flex items-center justify-center rounded-lg p-2 text-zinc-400"
+            title={activeProject.name}
+          >
+            <FolderOpen size={18} />
+          </div>
+        </div>
+      )}
 
       <nav className="flex-1 space-y-0.5 p-2 pt-3">
         {navItems.map((item) => {
