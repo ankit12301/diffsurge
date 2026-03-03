@@ -279,9 +279,12 @@ function ApiKeysPageContent() {
         </CardHeader>
         <CardContent>
           <pre className="rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100 overflow-x-auto">
-            <code>{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  https://api.driftsurge.dev/v1/projects/{projectId}/traffic`}</code>
+            <code>{`curl -H "X-API-Key: YOUR_API_KEY" \\
+  https://api.yourdomain.com/api/v1/projects`}</code>
           </pre>
+          <p className="mt-3 text-xs text-zinc-500">
+            Pass your API key via the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700">X-API-Key</code> header or as a <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700">Bearer</code> token in the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700">Authorization</code> header.
+          </p>
         </CardContent>
       </Card>
     </div>
