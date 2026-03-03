@@ -55,5 +55,5 @@ type APIKey struct {
 	LastUsedAt     *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 	ExpiresAt      *time.Time `json:"expires_at,omitempty" db:"expires_at"`
 	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	CreatedBy      uuid.UUID  `json:"created_by" db:"created_by"`
+	CreatedBy      *uuid.UUID `json:"created_by,omitempty" db:"created_by"`
 }

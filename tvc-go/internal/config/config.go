@@ -55,3 +55,10 @@ type ReplayConfig struct {
 	RateLimit int           `mapstructure:"rate_limit"`
 	Timeout   time.Duration `mapstructure:"timeout"`
 }
+
+// CLIConfig holds configuration for the surge CLI tool.
+type CLIConfig struct {
+	APIKey    string `mapstructure:"api_key"`
+	APIURL    string `mapstructure:"api_url"`
+	ProjectID string `mapstructure:"project_id"`
+}

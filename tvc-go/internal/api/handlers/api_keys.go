@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tvc-org/tvc/internal/api/middleware"
 	"github.com/tvc-org/tvc/internal/api/request"
 	"github.com/tvc-org/tvc/internal/api/response"
 	"github.com/tvc-org/tvc/internal/models"
@@ -95,7 +96,11 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		KeyHash:        string(keyHash),
 		ExpiresAt:      req.ExpiresAt,
 		CreatedAt:      time.Now(),
-		// CreatedBy would come from auth context in production
+	}
+
+	// Set CreatedBy from auth context if available
+	if userID := middleware.GetUserID(r.Context()); userID != uuid.Nil {
+		apiKey.CreatedBy = &userID
 	}
 
 	if err := h.store.CreateAPIKey(r.Context(), apiKey); err != nil {

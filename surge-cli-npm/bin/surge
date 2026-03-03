@@ -3,13 +3,48 @@
 const { execFileSync } = require("child_process");
 const path = require("path");
 const os = require("os");
+const fs = require("fs");
 
 const isWindows = os.platform() === "win32";
 const binaryName = isWindows ? "surge.exe" : "surge";
 const binaryPath = path.join(__dirname, binaryName);
 
+// Load .env from the current working directory and merge into process.env
+function loadDotEnv() {
+  const envPath = path.join(process.cwd(), ".env");
+  try {
+    const content = fs.readFileSync(envPath, "utf8");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      let val = trimmed.slice(eqIdx + 1).trim();
+      // Remove surrounding quotes
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      // Only set if not already in env (real env vars take priority)
+      if (!(key in process.env)) {
+        process.env[key] = val;
+      }
+    }
+  } catch {
+    // .env file not found or unreadable — that's fine
+  }
+}
+
+loadDotEnv();
+
 try {
-  execFileSync(binaryPath, process.argv.slice(2), { stdio: "inherit" });
+  execFileSync(binaryPath, process.argv.slice(2), {
+    stdio: "inherit",
+    env: process.env,
+  });
 } catch (err) {
   if (err.status !== undefined) {
     process.exit(err.status);

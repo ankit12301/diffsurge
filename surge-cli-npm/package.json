@@ -1,7 +1,7 @@
 {
   "name": "driftsurge",
-  "version": "0.1.0",
-  "description": "Driftsurge CLI — API traffic capture, diff, schema comparison, and replay",
+  "version": "0.2.0",
+  "description": "Driftsurge CLI — API traffic capture, diff, schema comparison, replay, and CI/CD checks with API key auth",
   "keywords": [
     "api",
     "traffic",
