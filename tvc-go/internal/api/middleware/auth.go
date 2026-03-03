@@ -2,6 +2,9 @@ package middleware
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
@@ -34,7 +37,7 @@ type AuthConfig struct {
 
 type JWKSCache struct {
 	mu      sync.RWMutex
-	keys    map[string]*rsa.PublicKey
+	keys    map[string]crypto.PublicKey // supports *rsa.PublicKey and *ecdsa.PublicKey
 	fetched time.Time
 	ttl     time.Duration
 	url     string
@@ -56,7 +59,7 @@ func NewAuth(cfg AuthConfig, log *logger.Logger, store storage.Repository) *Auth
 
 	if cfg.SupabaseURL != "" {
 		a.jwksCache = &JWKSCache{
-			keys: make(map[string]*rsa.PublicKey),
+			keys: make(map[string]crypto.PublicKey),
 			ttl:  6 * time.Hour,
 			url:  strings.TrimRight(cfg.SupabaseURL, "/") + "/auth/v1/.well-known/jwks.json",
 		}
@@ -175,19 +178,31 @@ func (a *Auth) validateToken(tokenStr string) (jwt.MapClaims, error) {
 		}
 	}
 
-	// Try RSA (RS256) with JWKS from Supabase
+	// Try JWKS from Supabase (supports RS256/RSA and ES256/ECDSA)
 	if a.jwksCache != nil {
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-			}
 			kid, _ := t.Header["kid"].(string)
 			key, err := a.getPublicKey(kid)
 			if err != nil {
 				return nil, err
 			}
-			return key, nil
+
+			// Validate that the key type matches the signing method
+			switch t.Method.(type) {
+			case *jwt.SigningMethodRSA:
+				if _, ok := key.(*rsa.PublicKey); ok {
+					return key, nil
+				}
+				return nil, fmt.Errorf("key %s is not RSA", kid)
+			case *jwt.SigningMethodECDSA:
+				if _, ok := key.(*ecdsa.PublicKey); ok {
+					return key, nil
+				}
+				return nil, fmt.Errorf("key %s is not EC", kid)
+			default:
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
 		})
 		if err == nil && token.Valid {
 			return claims, nil
@@ -198,7 +213,7 @@ func (a *Auth) validateToken(tokenStr string) (jwt.MapClaims, error) {
 	return nil, fmt.Errorf("no valid signing key configured")
 }
 
-func (a *Auth) getPublicKey(kid string) (*rsa.PublicKey, error) {
+func (a *Auth) getPublicKey(kid string) (crypto.PublicKey, error) {
 	a.jwksCache.mu.RLock()
 	if key, ok := a.jwksCache.keys[kid]; ok && time.Since(a.jwksCache.fetched) < a.jwksCache.ttl {
 		a.jwksCache.mu.RUnlock()
@@ -216,11 +231,16 @@ type jwksResponse struct {
 type jwkKey struct {
 	Kid string `json:"kid"`
 	Kty string `json:"kty"`
-	N   string `json:"n"`
-	E   string `json:"e"`
+	// RSA fields
+	N string `json:"n"`
+	E string `json:"e"`
+	// EC fields
+	Crv string `json:"crv"`
+	X   string `json:"x"`
+	Y   string `json:"y"`
 }
 
-func (a *Auth) refreshJWKS(kid string) (*rsa.PublicKey, error) {
+func (a *Auth) refreshJWKS(kid string) (crypto.PublicKey, error) {
 	a.jwksCache.mu.Lock()
 	defer a.jwksCache.mu.Unlock()
 
@@ -240,16 +260,22 @@ func (a *Auth) refreshJWKS(kid string) (*rsa.PublicKey, error) {
 		return nil, fmt.Errorf("decoding JWKS: %w", err)
 	}
 
-	a.jwksCache.keys = make(map[string]*rsa.PublicKey)
+	a.jwksCache.keys = make(map[string]crypto.PublicKey)
 	for _, k := range jwks.Keys {
-		if k.Kty != "RSA" {
-			continue
+		switch k.Kty {
+		case "RSA":
+			pubKey, err := parseRSAPublicKey(k)
+			if err != nil {
+				continue
+			}
+			a.jwksCache.keys[k.Kid] = pubKey
+		case "EC":
+			pubKey, err := parseECPublicKey(k)
+			if err != nil {
+				continue
+			}
+			a.jwksCache.keys[k.Kid] = pubKey
 		}
-		pubKey, err := parseRSAPublicKey(k)
-		if err != nil {
-			continue
-		}
-		a.jwksCache.keys[k.Kid] = pubKey
 	}
 	a.jwksCache.fetched = time.Now()
 
@@ -277,6 +303,34 @@ func parseRSAPublicKey(k jwkKey) (*rsa.PublicKey, error) {
 	}
 
 	return &rsa.PublicKey{N: n, E: e}, nil
+}
+
+func parseECPublicKey(k jwkKey) (*ecdsa.PublicKey, error) {
+	var curve elliptic.Curve
+	switch k.Crv {
+	case "P-256":
+		curve = elliptic.P256()
+	case "P-384":
+		curve = elliptic.P384()
+	case "P-521":
+		curve = elliptic.P521()
+	default:
+		return nil, fmt.Errorf("unsupported EC curve: %s", k.Crv)
+	}
+
+	xBytes, err := base64.RawURLEncoding.DecodeString(k.X)
+	if err != nil {
+		return nil, fmt.Errorf("decoding EC X: %w", err)
+	}
+	yBytes, err := base64.RawURLEncoding.DecodeString(k.Y)
+	if err != nil {
+		return nil, fmt.Errorf("decoding EC Y: %w", err)
+	}
+
+	x := new(big.Int).SetBytes(xBytes)
+	y := new(big.Int).SetBytes(yBytes)
+
+	return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, nil
 }
 
 func extractToken(r *http.Request) string {
