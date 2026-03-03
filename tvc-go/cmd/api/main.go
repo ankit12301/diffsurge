@@ -50,11 +50,18 @@ func main() {
 	defer store.Close()
 	log.Info().Msg("Connected to PostgreSQL")
 
-	// Auth config from environment
+	// Auth config from environment (accept both docker-compose and .env naming)
 	authCfg := middleware.AuthConfig{
-		SupabaseURL:    os.Getenv("SUPABASE_URL"),
-		SupabaseSecret: os.Getenv("SUPABASE_SERVICE_KEY"),
+		SupabaseURL:    getEnvFallback("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"),
+		SupabaseSecret: getEnvFallback("SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY"),
 		JWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
+	}
+
+	if authCfg.JWTSecret == "" {
+		log.Warn().Msg("SUPABASE_JWT_SECRET is not set — JWT auth will fail")
+	}
+	if authCfg.SupabaseURL == "" {
+		log.Warn().Msg("SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL is not set — JWKS auth will be unavailable")
 	}
 
 	deps := api.ServerDeps{
@@ -100,4 +107,12 @@ func main() {
 
 	<-ctx.Done()
 	log.Info().Msg("API server stopped")
+}
+
+// getEnvFallback returns the value of the primary env var, or the fallback if primary is empty.
+func getEnvFallback(primary, fallback string) string {
+	if v := os.Getenv(primary); v != "" {
+		return v
+	}
+	return os.Getenv(fallback)
 }
