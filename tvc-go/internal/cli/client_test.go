@@ -30,7 +30,7 @@ func TestAPIClient_AddsAuthHeader(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, "tvc_live_testabc123", receivedKey)
-	assert.Equal(t, "driftsurge-cli", receivedUA)
+	assert.Equal(t, "diffsurge-cli", receivedUA)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 

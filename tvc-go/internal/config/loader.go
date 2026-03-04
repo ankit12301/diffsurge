@@ -52,7 +52,7 @@ func Load(cfgFile string) (*Config, error) {
 // Priority: flags > SURGE_* env vars > TVC_* env vars > .env file > defaults
 func LoadCLI() *CLIConfig {
 	cfg := &CLIConfig{
-		APIURL: "https://api.driftsurge.com",
+		APIURL: "https://api.diffsurge.com",
 	}
 
 	// Try to load .env from current directory (best-effort, ignore errors)

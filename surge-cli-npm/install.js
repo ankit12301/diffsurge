@@ -24,7 +24,7 @@ function getPlatformBinary() {
     console.error(
       `Unsupported platform: ${platform}-${arch}\n` +
         `Supported: ${Object.keys(mapping).join(", ")}\n` +
-        `You can use Docker instead: docker run equixankit/driftsurge-cli`
+        `You can use Docker instead: docker run equixankit/diffsurge-cli`
     );
     process.exit(1);
   }
@@ -46,7 +46,7 @@ function main() {
 
   if (!fs.existsSync(gzPath)) {
     console.error(`Binary not found: ${gzPath}`);
-    console.error(`Use Docker instead: docker run equixankit/driftsurge-cli`);
+    console.error(`Use Docker instead: docker run equixankit/diffsurge-cli`);
     process.exit(1);
   }
 

@@ -20,8 +20,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "surge",
-	Short: "Driftsurge - Catch breaking API changes before your users do",
-	Long: `Driftsurge is a developer tool for API governance.
+	Short: "Diffsurge - Catch breaking API changes before your users do",
+	Long: `Diffsurge is a developer tool for API governance.
 
 It provides schema diffing, traffic capture & replay, and breaking change detection
 to help teams ship API changes with confidence.
@@ -69,7 +69,7 @@ func init() {
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version of Driftsurge",
+	Short: "Print the version of Diffsurge",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("surge version %s\n", config.Version)
 	},

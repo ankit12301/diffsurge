@@ -17,8 +17,8 @@ var (
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Run API checks against the Driftsurge backend (for CI/CD)",
-	Long: `Validate your API against the Driftsurge backend.
+	Short: "Run API checks against the Diffsurge backend (for CI/CD)",
+	Long: `Validate your API against the Diffsurge backend.
 
 This command is designed for CI/CD pipelines. It authenticates using your
 API key, fetches the latest traffic and schema data, and optionally diffs
@@ -58,7 +58,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 
 	client := NewAPIClient(cliCfg.APIURL, cliCfg.APIKey)
 
-	fmt.Fprintf(cmd.OutOrStdout(), "🔍 Driftsurge Check\n")
+	fmt.Fprintf(cmd.OutOrStdout(), "🔍 Diffsurge Check\n")
 	fmt.Fprintf(cmd.OutOrStdout(), "   API:     %s\n", cliCfg.APIURL)
 	fmt.Fprintf(cmd.OutOrStdout(), "   Project: %s\n\n", projectID)
 

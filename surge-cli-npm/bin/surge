@@ -50,6 +50,6 @@ try {
     process.exit(err.status);
   }
   console.error(`Failed to run surge: ${err.message}`);
-  console.error(`Run "npm rebuild driftsurge" to re-download the binary.`);
+  console.error(`Run "npm rebuild diffsurge" to re-download the binary.`);
   process.exit(1);
 }

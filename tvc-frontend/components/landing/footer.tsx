@@ -125,7 +125,7 @@ export function Footer() {
               color: "var(--text-on-dark-muted)",
             }}
           >
-            &copy; {new Date().getFullYear()} Driftsurge. All rights reserved.
+            &copy; {new Date().getFullYear()} Diffsurge. All rights reserved.
           </p>
           <a
             href="https://hub.docker.com/u/equixankit"

@@ -109,7 +109,7 @@ export function Capabilities() {
                   display: "inline-block",
                 }}
               />
-              <span>What Driftsurge catches</span>
+              <span>What Diffsurge catches</span>
             </div>
             <h2
               className="font-editorial"
@@ -131,7 +131,7 @@ export function Capabilities() {
               }}
             >
               Unit tests verify logic. Integration tests verify contracts.
-              Driftsurge replays actual production traffic — catching real-world
+              Diffsurge replays actual production traffic — catching real-world
               mismatches before your users do.
             </p>
           </div>

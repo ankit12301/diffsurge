@@ -115,7 +115,7 @@ export default function DocsPage() {
                 Documentation
               </h1>
               <p className="mt-3 text-[15px] text-zinc-500 leading-relaxed max-w-2xl">
-                Driftsurge is a CLI tool and infrastructure for catching breaking
+                Diffsurge is a CLI tool and infrastructure for catching breaking
                 API changes. Compare schemas, capture traffic, and replay
                 requests against staging builds.
               </p>
@@ -125,9 +125,9 @@ export default function DocsPage() {
               <p className="text-[14px]">
                 Install the Surge CLI globally via npm:
               </p>
-              <Code>{`npm install -g driftsurge`}</Code>
+              <Code>{`npm install -g diffsurge`}</Code>
               <p className="text-[14px]">Or use Docker (no install required):</p>
-              <Code>{`docker run equixankit/driftsurge-cli --help`}</Code>
+              <Code>{`docker run equixankit/diffsurge-cli --help`}</Code>
               <p className="text-[14px]">
                 Verify the installation:
               </p>
@@ -208,7 +208,7 @@ surge replay \\
 
             <Section id="traffic-proxy" icon={<Server size={16} />} title="Traffic Proxy">
               <p className="text-[14px]">
-                Deploy the Driftsurge proxy to capture production traffic. It
+                Deploy the Diffsurge proxy to capture production traffic. It
                 runs as a reverse proxy, sampling request/response pairs with
                 automatic PII redaction.
               </p>
@@ -216,7 +216,7 @@ surge replay \\
   -e TVC_STORAGE_POSTGRES_URL=postgresql://... \\
   -e TVC_STORAGE_REDIS_URL=rediss://... \\
   -p 8081:8080 \\
-  equixankit/driftsurge-proxy`}</Code>
+  equixankit/diffsurge-proxy`}</Code>
               <p className="text-[14px]">
                 The proxy adds less than 5ms of latency at p95. It uses async
                 buffering so the forwarding path is never blocked by storage I/O.
@@ -249,7 +249,7 @@ surge replay \\
 
             <Section id="cicd" icon={<Terminal size={16} />} title="CI/CD Integration">
               <p className="text-[14px]">
-                Add Driftsurge to your CI/CD pipeline to automatically block
+                Add Diffsurge to your CI/CD pipeline to automatically block
                 deploys with breaking changes.
               </p>
               <p className="text-[14px] font-medium text-zinc-700">GitHub Actions:</p>
@@ -264,7 +264,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Surge CLI
-        run: npm install -g driftsurge
+        run: npm install -g diffsurge
 
       - name: Check for breaking changes
         run: |

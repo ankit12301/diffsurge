@@ -101,7 +101,7 @@ export function FAQ() {
                   color: "var(--text-muted)",
                 }}
               >
-                Everything you need to know about Driftsurge. Can&apos;t find
+                Everything you need to know about Diffsurge. Can&apos;t find
                 what you&apos;re looking for?{" "}
                 <a
                   href="/contact"

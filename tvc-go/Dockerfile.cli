@@ -1,5 +1,5 @@
 # ============================================================================
-# Driftsurge CLI - Multi-stage Docker Build
+# Diffsurge CLI - Multi-stage Docker Build
 # Final image size target: < 20MB
 # ============================================================================
 

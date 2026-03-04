@@ -95,7 +95,7 @@ func TestLoadCLI_SURGEPrefixOverridesTVC(t *testing.T) {
 func TestLoadCLI_DefaultAPIURL(t *testing.T) {
 	cfg := LoadCLI()
 
-	assert.Equal(t, "https://api.driftsurge.com", cfg.APIURL)
+	assert.Equal(t, "https://api.diffsurge.com", cfg.APIURL)
 }
 
 func TestLoadCLI_FromDotEnvFile(t *testing.T) {
@@ -107,7 +107,7 @@ func TestLoadCLI_FromDotEnvFile(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.Chdir(dir))
 
-	envContent := `# Driftsurge config
+	envContent := `# Diffsurge config
 SURGE_API_KEY=tvc_live_dotenv_key
 SURGE_PROJECT_ID=dotenv-project-id
 SURGE_API_URL=https://test.api.com

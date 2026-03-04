@@ -1,9 +1,9 @@
-# Driftsurge
+# Diffsurge
 #### Deployment Version - 1.2
 
 **Catch breaking API changes before your users do.**
 
-Driftsurge captures production traffic, replays it against new deployments, and surfaces breaking changes — before a single user is affected. Schema diffing, traffic replay, and drift reports in one platform.
+Diffsurge captures production traffic, replays it against new deployments, and surfaces breaking changes — before a single user is affected. Schema diffing, traffic replay, and drift reports in one platform.
 
 ## Architecture
 
@@ -53,8 +53,8 @@ Driftsurge captures production traffic, replays it against new deployments, and 
 
 ```bash
 # Clone the repo
-git clone https://github.com/driftsurge/driftsurge.git
-cd driftsurge
+git clone https://github.com/diffsurge/diffsurge.git
+cd diffsurge
 
 # Start all services (reads from .env automatically)
 docker compose up --build

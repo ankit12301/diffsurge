@@ -307,7 +307,7 @@ export function Hero() {
               fontWeight: 400,
             }}
           >
-            Driftsurge captures production traffic, replays it against your
+            Diffsurge captures production traffic, replays it against your
             staging builds, and surfaces every breaking change — so you ship
             with confidence instead of crossing your fingers.
           </p>

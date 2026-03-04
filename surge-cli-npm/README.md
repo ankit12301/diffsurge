@@ -1,24 +1,24 @@
-# driftsurge
+# diffsurge
 
 > Catch breaking API changes before your users do.
 
-Driftsurge helps you detect breaking API changes before they reach production.
+Diffsurge helps you detect breaking API changes before they reach production.
 
 ## Install
 
 ```bash
-npm install -g driftsurge
+npm install -g diffsurge
 ```
 
 Or use Docker:
 
 ```bash
-docker run equixankit/driftsurge-cli --help
+docker run equixankit/diffsurge-cli --help
 ```
 
 ## Setup
 
-1. **Create an API key** in the [Driftsurge dashboard](https://app.driftsurge.com) → Settings → API Keys
+1. **Create an API key** in the [Diffsurge dashboard](https://app.diffsurge.com) → Settings → API Keys
 2. **Add it to your `.env` file** in your project root:
 
 ```env
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install -g driftsurge
+      - run: npm install -g diffsurge
       - run: surge check --project-id ${{ secrets.SURGE_PROJECT_ID }}
         env:
           SURGE_API_KEY: ${{ secrets.SURGE_API_KEY }}
@@ -105,7 +105,7 @@ jobs:
 api-check:
   image: node:20
   script:
-    - npm install -g driftsurge
+    - npm install -g diffsurge
     - surge check --project-id $SURGE_PROJECT_ID
   variables:
     SURGE_API_KEY: $SURGE_API_KEY
@@ -116,7 +116,7 @@ api-check:
 | Variable | Description | Default |
 |---|---|---|
 | `SURGE_API_KEY` | Your API key (starts with `tvc_live_`) | — |
-| `SURGE_API_URL` | API base URL | `https://api.driftsurge.com` |
+| `SURGE_API_URL` | API base URL | `https://api.diffsurge.com` |
 | `SURGE_PROJECT_ID` | Default project ID | — |
 
 All variables can also use the `TVC_` prefix (e.g., `TVC_API_KEY`) as a fallback.

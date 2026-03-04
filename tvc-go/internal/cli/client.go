@@ -47,7 +47,7 @@ func (c *APIClient) Do(method, path string, body io.Reader) (*http.Response, err
 
 	req.Header.Set("X-API-Key", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "driftsurge-cli")
+	req.Header.Set("User-Agent", "diffsurge-cli")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

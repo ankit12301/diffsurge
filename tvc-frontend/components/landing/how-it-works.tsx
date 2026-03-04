@@ -8,7 +8,7 @@ const steps = [
     title: "Install the CLI",
     description:
       "One command, zero dependencies. Install the Surge CLI globally via npm or run it directly with Docker. Works on macOS, Linux, and Windows.",
-    code: `$ npm install -g driftsurge
+    code: `$ npm install -g diffsurge
 
   added 1 package in 2.1s
 
@@ -51,7 +51,7 @@ $ surge --help
     -e TVC_STORAGE_POSTGRES_URL=... \\
     -e TVC_STORAGE_REDIS_URL=... \\
     -p 8081:8080 \\
-    equixankit/driftsurge-proxy
+    equixankit/diffsurge-proxy
 
   ▸ Proxy listening on :8080
   ▸ Sampling 10% of traffic

@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Driftsurge — Catch breaking API changes before your users do",
+  title: "Diffsurge — Catch breaking API changes before your users do",
   description:
-    "Driftsurge captures production traffic, replays it against new deployments, and surfaces breaking changes before a single user is affected. Schema diffing, traffic replay, and drift reports in one CLI.",
+    "Diffsurge captures production traffic, replays it against new deployments, and surfaces breaking changes before a single user is affected. Schema diffing, traffic replay, and drift reports in one CLI.",
   keywords: [
     "API testing",
     "API breaking changes",

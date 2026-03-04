@@ -38,7 +38,7 @@ func runWhoami(cmd *cobra.Command, args []string) error {
 
 	client := NewAPIClient(cliCfg.APIURL, cliCfg.APIKey)
 
-	fmt.Fprintf(cmd.OutOrStdout(), "🔑 Driftsurge CLI\n\n")
+	fmt.Fprintf(cmd.OutOrStdout(), "🔑 Diffsurge CLI\n\n")
 	fmt.Fprintf(cmd.OutOrStdout(), "   API Key:  %s\n", keyDisplay)
 	fmt.Fprintf(cmd.OutOrStdout(), "   API URL:  %s\n", cliCfg.APIURL)
 
