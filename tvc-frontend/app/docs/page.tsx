@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { siteConfig } from "@/lib/constants";
+import { FadeIn } from "@/components/ui/fade-in";
 import {
   Terminal,
   Download,
@@ -8,141 +11,520 @@ import {
   Server,
   Shield,
   ArrowLeft,
+  ChevronRight,
 } from "lucide-react";
 
+/* ─── Section component ─── */
 function Section({
   icon,
   title,
   children,
   id,
+  index = 0,
 }: {
   icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
   id: string;
+  index?: number;
 }) {
   return (
-    <section id={id} className="scroll-mt-24">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-          {icon}
+    <FadeIn delay={0.05 * index}>
+      <section
+        id={id}
+        className="scroll-mt-24"
+        style={{
+          paddingBottom: 48,
+          borderBottom: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--accent-purple)",
+            }}
+          >
+            {icon}
+          </div>
+          <h2
+            className="font-editorial"
+            style={{
+              fontSize: 22,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {title}
+          </h2>
         </div>
-        <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
-      </div>
-      <div className="prose-sm text-zinc-600 leading-relaxed space-y-4">
-        {children}
-      </div>
-    </section>
+        <div
+          style={{
+            color: "var(--text-secondary)",
+            fontSize: 14,
+            lineHeight: 1.7,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          {children}
+        </div>
+      </section>
+    </FadeIn>
   );
 }
 
+/* ─── Code block (research terminal style) ─── */
 function Code({ children }: { children: string }) {
   return (
-    <pre className="overflow-x-auto rounded-xl border border-zinc-200 bg-[#0a0a0f] p-4 font-mono text-[12px] leading-[1.8] text-zinc-400">
-      {children}
-    </pre>
+    <div className="terminal-research" style={{ marginTop: 4 }}>
+      <div className="terminal-research-header">
+        <div className="dot" />
+        <div className="dot" />
+        <div className="dot" />
+        <span
+          style={{
+            marginLeft: 8,
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.2)",
+          }}
+        >
+          terminal
+        </span>
+      </div>
+      <pre
+        className="hiw-code-pre"
+        style={{
+          padding: "16px 18px",
+          fontFamily: "var(--font-mono)",
+          fontSize: 12,
+          lineHeight: 1.9,
+          color: "rgba(255,255,255,0.55)",
+          margin: 0,
+          overflowX: "auto",
+        }}
+      >
+        {children}
+      </pre>
+    </div>
   );
 }
 
+/* ─── Inline code ─── */
 function InlineCode({ children }: { children: string }) {
   return (
-    <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-[13px] font-mono text-zinc-700">
+    <code
+      style={{
+        borderRadius: 5,
+        background: "var(--bg-secondary)",
+        padding: "2px 7px",
+        fontSize: 13,
+        fontFamily: "var(--font-mono)",
+        color: "var(--text-primary)",
+        border: "1px solid var(--border-subtle)",
+      }}
+    >
       {children}
     </code>
   );
 }
 
+/* ─── Flag item ─── */
+function Flag({
+  name,
+  description,
+}: {
+  name: string;
+  description: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        fontSize: 13,
+        lineHeight: 1.6,
+      }}
+    >
+      <InlineCode>{name}</InlineCode>
+      <span style={{ color: "var(--text-muted)" }}>— {description}</span>
+    </div>
+  );
+}
+
+/* ─── TOC ─── */
 const tocItems = [
-  { label: "Installation", href: "#installation" },
-  { label: "Quick Start", href: "#quick-start" },
-  { label: "Schema Diff", href: "#schema-diff" },
-  { label: "JSON Diff", href: "#json-diff" },
-  { label: "Traffic Proxy", href: "#traffic-proxy" },
-  { label: "Replay Engine", href: "#replay-engine" },
-  { label: "CI/CD Integration", href: "#cicd" },
+  { label: "Installation", href: "#installation", icon: <Download size={12} /> },
+  { label: "Quick Start", href: "#quick-start", icon: <Terminal size={12} /> },
+  { label: "Schema Diff", href: "#schema-diff", icon: <Shield size={12} /> },
+  { label: "JSON Diff", href: "#json-diff", icon: <FileJson size={12} /> },
+  { label: "Traffic Proxy", href: "#traffic-proxy", icon: <Server size={12} /> },
+  { label: "Replay Engine", href: "#replay-engine", icon: <Play size={12} /> },
+  { label: "CI/CD Integration", href: "#cicd", icon: <Terminal size={12} /> },
 ];
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-4 px-6">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg-primary)",
+      }}
+    >
+      {/* ─── Research grid bg ─── */}
+      <div
+        className="bg-research-grid"
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          opacity: 0.4,
+          zIndex: 0,
+        }}
+      />
+
+      {/* ─── Header ─── */}
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 40,
+          background: "rgba(250, 249, 246, 0.92)",
+          backdropFilter: "blur(16px)",
+          borderBottom: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div
+          className="mx-auto"
+          style={{
+            maxWidth: 1120,
+            height: 56,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            padding: "0 24px",
+          }}
+        >
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 13,
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              transition: "color 0.2s",
+            }}
           >
             <ArrowLeft size={14} />
             Back
           </Link>
-          <div className="h-4 w-px bg-zinc-200" />
-          <Link href="/" className="flex items-center gap-2">
+          <div
+            style={{
+              width: 1,
+              height: 16,
+              background: "var(--border-light)",
+            }}
+          />
+          <Link
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              textDecoration: "none",
+            }}
+          >
             <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="6" fill="#18181B" />
+              <rect width="28" height="28" rx="6" fill="#1A1714" />
               <path d="M7 10l7-4 7 4-7 4-7-4z" fill="#A1A1AA" />
               <path d="M7 14l7 4 7-4" stroke="#fff" strokeWidth="1.5" />
               <path d="M7 18l7 4 7-4" stroke="#71717A" strokeWidth="1.5" />
             </svg>
-            <span className="text-[14px] font-semibold">
-              {siteConfig.name}{" "}
-              <span className="font-normal text-zinc-400">Docs</span>
+            <span
+              className="font-medium"
+              style={{ fontSize: 16, letterSpacing: "-0.02em" }}
+            >
+              {siteConfig.name}
+            </span>
+            <span
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                fontWeight: 400,
+              }}
+            >
+              Docs
             </span>
           </Link>
+
+          {/* Data stripe accent */}
+          <div style={{ flex: 1 }} />
+          <div
+            className="data-stripe animate-stripe"
+            style={{ width: 48, height: 3, borderRadius: 2, opacity: 0.6 }}
+          />
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1200px] px-6 py-10 md:py-14">
-        <div className="grid gap-10 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr]">
+      {/* ─── Main Content ─── */}
+      <div
+        className="mx-auto"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          maxWidth: 1120,
+          padding: "40px 24px 80px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: 48,
+            gridTemplateColumns: "1fr",
+          }}
+          className="md:!grid-cols-[240px_1fr]"
+        >
+          {/* ─── Sidebar TOC ─── */}
           <aside className="hidden md:block">
-            <nav className="sticky top-24 space-y-1">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+            <nav
+              style={{
+                position: "sticky",
+                top: 80,
+              }}
+            >
+              <p className="micro-label" style={{ marginBottom: 16 }}>
                 On this page
               </p>
-              {tocItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-md px-3 py-1.5 text-[13px] text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                {tocItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      color: "var(--text-muted)",
+                      textDecoration: "none",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
+                  >
+                    <span style={{ opacity: 0.5 }}>{item.icon}</span>
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+
+              {/* Quick links card */}
+              <div
+                className="card-flat"
+                style={{
+                  marginTop: 24,
+                  padding: 16,
+                }}
+              >
+                <p
+                  className="micro-label"
+                  style={{
+                    fontSize: 9,
+                    marginBottom: 12,
+                  }}
                 >
-                  {item.label}
-                </a>
-              ))}
+                  Resources
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <a
+                    href="https://www.npmjs.com/package/diffsurge"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-secondary)",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "var(--text-primary)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--text-secondary)")
+                    }
+                  >
+                    <ChevronRight size={10} />
+                    npm Package
+                  </a>
+                  <a
+                    href="https://hub.docker.com/u/equixankit"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-secondary)",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "var(--text-primary)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--text-secondary)")
+                    }
+                  >
+                    <ChevronRight size={10} />
+                    Docker Hub
+                  </a>
+                </div>
+              </div>
             </nav>
           </aside>
 
-          <main className="min-w-0 space-y-12">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-                Documentation
-              </h1>
-              <p className="mt-3 text-[15px] text-zinc-500 leading-relaxed max-w-2xl">
-                Diffsurge is a CLI tool and infrastructure for catching breaking
-                API changes. Compare schemas, capture traffic, and replay
-                requests against staging builds.
-              </p>
-            </div>
+          {/* ─── Content ─── */}
+          <main
+            style={{
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 48,
+            }}
+          >
+            {/* Hero section */}
+            <FadeIn>
+              <div>
+                <div
+                  className="micro-label"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 16,
+                  }}
+                >
+                  <span
+                    className="data-stripe"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 3,
+                      display: "inline-block",
+                    }}
+                  />
+                  <span>CLI Reference</span>
+                </div>
+                <h1
+                  className="font-editorial"
+                  style={{
+                    fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
+                    lineHeight: 1.1,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Documentation
+                </h1>
+                <p
+                  style={{
+                    marginTop: 16,
+                    fontSize: 15,
+                    lineHeight: 1.7,
+                    color: "var(--text-secondary)",
+                    maxWidth: 560,
+                  }}
+                >
+                  Diffsurge is a CLI tool and infrastructure for catching breaking
+                  API changes. Compare schemas, capture traffic, and replay
+                  requests against staging builds.
+                </p>
 
-            <Section id="installation" icon={<Download size={16} />} title="Installation">
-              <p className="text-[14px]">
-                Install the Surge CLI globally via npm:
-              </p>
+                {/* Data stripe divider */}
+                <div
+                  className="data-stripe-wide animate-stripe"
+                  style={{
+                    marginTop: 28,
+                    height: 3,
+                    borderRadius: 2,
+                    width: "100%",
+                    maxWidth: 280,
+                    opacity: 0.5,
+                  }}
+                />
+              </div>
+            </FadeIn>
+
+            {/* ─── Installation ─── */}
+            <Section
+              id="installation"
+              icon={<Download size={16} />}
+              title="Installation"
+              index={1}
+            >
+              <p>Install the Surge CLI globally via npm:</p>
               <Code>{`npm install -g diffsurge`}</Code>
-              <p className="text-[14px]">Or use Docker (no install required):</p>
+              <p>Or use Docker (no install required):</p>
               <Code>{`docker run equixankit/diffsurge-cli --help`}</Code>
-              <p className="text-[14px]">
-                Verify the installation:
-              </p>
+              <p>Verify the installation:</p>
               <Code>{`surge --help`}</Code>
-              <p className="text-[14px]">
+              <p>
                 Available platforms: <InlineCode>macOS (Intel & Apple Silicon)</InlineCode>,{" "}
                 <InlineCode>Linux (x64, ARM64)</InlineCode>,{" "}
                 <InlineCode>Windows (x64)</InlineCode>.
               </p>
             </Section>
 
-            <Section id="quick-start" icon={<Terminal size={16} />} title="Quick Start">
-              <p className="text-[14px]">
-                Compare two API schemas and detect breaking changes in under
-                30 seconds:
+            {/* ─── Quick Start ─── */}
+            <Section
+              id="quick-start"
+              icon={<Terminal size={16} />}
+              title="Quick Start"
+              index={2}
+            >
+              <p>
+                Compare two API schemas and detect breaking changes in under 30 seconds:
               </p>
               <Code>{`# Compare two OpenAPI schemas
 surge schema diff \\
@@ -159,8 +541,14 @@ surge replay \\
   --target http://staging.example.com`}</Code>
             </Section>
 
-            <Section id="schema-diff" icon={<Shield size={16} />} title="Schema Diff">
-              <p className="text-[14px]">
+            {/* ─── Schema Diff ─── */}
+            <Section
+              id="schema-diff"
+              icon={<Shield size={16} />}
+              title="Schema Diff"
+              index={3}
+            >
+              <p>
                 Compare two OpenAPI 3.x schema files and detect breaking changes
                 like removed endpoints, type changes, and new required parameters.
               </p>
@@ -169,25 +557,64 @@ surge replay \\
   --new api-v2.yaml \\
   --fail-on-breaking \\
   --format text`}</Code>
-              <p className="text-[14px] font-medium text-zinc-700">Flags:</p>
-              <div className="space-y-2 text-[13px]">
-                <p><InlineCode>--old</InlineCode> — Path to the old/original schema file (required)</p>
-                <p><InlineCode>--new</InlineCode> — Path to the new/modified schema file (required)</p>
-                <p><InlineCode>--fail-on-breaking</InlineCode> — Exit with code 1 if breaking changes found</p>
-                <p><InlineCode>--breaking-only</InlineCode> — Show only breaking changes</p>
-                <p><InlineCode>--format</InlineCode> — Output format: <InlineCode>text</InlineCode> or <InlineCode>json</InlineCode></p>
-                <p><InlineCode>--output</InlineCode> — Write output to a file</p>
+              <p
+                style={{
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  marginTop: 8,
+                }}
+              >
+                Flags
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Flag name="--old" description="Path to the old/original schema file (required)" />
+                <Flag name="--new" description="Path to the new/modified schema file (required)" />
+                <Flag name="--fail-on-breaking" description="Exit with code 1 if breaking changes found" />
+                <Flag name="--breaking-only" description="Show only breaking changes" />
+                <Flag name="--format" description="Output format: text or json" />
+                <Flag name="--output" description="Write output to a file" />
               </div>
-              <p className="text-[14px] font-medium text-zinc-700 mt-4">Exit codes:</p>
-              <div className="space-y-1 text-[13px]">
-                <p><InlineCode>0</InlineCode> — No breaking changes</p>
-                <p><InlineCode>1</InlineCode> — Breaking changes detected (with <InlineCode>--fail-on-breaking</InlineCode>)</p>
-                <p><InlineCode>2</InlineCode> — Error occurred</p>
+              <p
+                style={{
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  marginTop: 8,
+                }}
+              >
+                Exit codes
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontSize: 13 }}>
+                  <InlineCode>0</InlineCode>{" "}
+                  <span style={{ color: "var(--text-muted)" }}>— No breaking changes</span>
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  <InlineCode>1</InlineCode>{" "}
+                  <span style={{ color: "var(--text-muted)" }}>
+                    — Breaking changes detected (with <InlineCode>--fail-on-breaking</InlineCode>)
+                  </span>
+                </div>
+                <div style={{ fontSize: 13 }}>
+                  <InlineCode>2</InlineCode>{" "}
+                  <span style={{ color: "var(--text-muted)" }}>— Error occurred</span>
+                </div>
               </div>
             </Section>
 
-            <Section id="json-diff" icon={<FileJson size={16} />} title="JSON Diff">
-              <p className="text-[14px]">
+            {/* ─── JSON Diff ─── */}
+            <Section
+              id="json-diff"
+              icon={<FileJson size={16} />}
+              title="JSON Diff"
+              index={4}
+            >
+              <p>
                 Compare two JSON files and produce a detailed diff report with
                 type changes, additions, and removals.
               </p>
@@ -196,18 +623,35 @@ surge replay \\
   --new response-v2.json \\
   --array-as-set \\
   --format json`}</Code>
-              <p className="text-[14px] font-medium text-zinc-700">Flags:</p>
-              <div className="space-y-2 text-[13px]">
-                <p><InlineCode>--old</InlineCode> — Path to the old JSON file (required)</p>
-                <p><InlineCode>--new</InlineCode> — Path to the new JSON file (required)</p>
-                <p><InlineCode>--array-as-set</InlineCode> — Compare arrays as sets (ignore order)</p>
-                <p><InlineCode>--ignore</InlineCode> — JSON paths to ignore (comma-separated)</p>
-                <p><InlineCode>--format</InlineCode> — Output format: <InlineCode>text</InlineCode> or <InlineCode>json</InlineCode></p>
+              <p
+                style={{
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  marginTop: 8,
+                }}
+              >
+                Flags
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Flag name="--old" description="Path to the old JSON file (required)" />
+                <Flag name="--new" description="Path to the new JSON file (required)" />
+                <Flag name="--array-as-set" description="Compare arrays as sets (ignore order)" />
+                <Flag name="--ignore" description="JSON paths to ignore (comma-separated)" />
+                <Flag name="--format" description="Output format: text or json" />
               </div>
             </Section>
 
-            <Section id="traffic-proxy" icon={<Server size={16} />} title="Traffic Proxy">
-              <p className="text-[14px]">
+            {/* ─── Traffic Proxy ─── */}
+            <Section
+              id="traffic-proxy"
+              icon={<Server size={16} />}
+              title="Traffic Proxy"
+              index={5}
+            >
+              <p>
                 Deploy the Diffsurge proxy to capture production traffic. It
                 runs as a reverse proxy, sampling request/response pairs with
                 automatic PII redaction.
@@ -217,15 +661,21 @@ surge replay \\
   -e TVC_STORAGE_REDIS_URL=rediss://... \\
   -p 8081:8080 \\
   equixankit/diffsurge-proxy`}</Code>
-              <p className="text-[14px]">
+              <p>
                 The proxy adds less than 5ms of latency at p95. It uses async
                 buffering so the forwarding path is never blocked by storage I/O.
-                Configure sampling rates to capture 1-100% of traffic.
+                Configure sampling rates to capture 1–100% of traffic.
               </p>
             </Section>
 
-            <Section id="replay-engine" icon={<Play size={16} />} title="Replay Engine">
-              <p className="text-[14px]">
+            {/* ─── Replay Engine ─── */}
+            <Section
+              id="replay-engine"
+              icon={<Play size={16} />}
+              title="Replay Engine"
+              index={6}
+            >
+              <p>
                 Replay captured traffic against a target server and compare
                 every response semantically.
               </p>
@@ -236,23 +686,50 @@ surge replay \\
   --rate-limit 500 \\
   --format json \\
   --output drift-report.json`}</Code>
-              <p className="text-[14px] font-medium text-zinc-700">Flags:</p>
-              <div className="space-y-2 text-[13px]">
-                <p><InlineCode>--source</InlineCode> — Traffic JSON file (required)</p>
-                <p><InlineCode>--target</InlineCode> — Target server URL (required)</p>
-                <p><InlineCode>--workers</InlineCode> — Concurrent workers (default: 10)</p>
-                <p><InlineCode>--rate-limit</InlineCode> — Max requests per second (0 = unlimited)</p>
-                <p><InlineCode>--timeout</InlineCode> — Per-request timeout (default: 30s)</p>
-                <p><InlineCode>--max-retries</InlineCode> — Max retries per request (default: 2)</p>
+              <p
+                style={{
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  marginTop: 8,
+                }}
+              >
+                Flags
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Flag name="--source" description="Traffic JSON file (required)" />
+                <Flag name="--target" description="Target server URL (required)" />
+                <Flag name="--workers" description="Concurrent workers (default: 10)" />
+                <Flag name="--rate-limit" description="Max requests per second (0 = unlimited)" />
+                <Flag name="--timeout" description="Per-request timeout (default: 30s)" />
+                <Flag name="--max-retries" description="Max retries per request (default: 2)" />
               </div>
             </Section>
 
-            <Section id="cicd" icon={<Terminal size={16} />} title="CI/CD Integration">
-              <p className="text-[14px]">
+            {/* ─── CI/CD ─── */}
+            <Section
+              id="cicd"
+              icon={<Terminal size={16} />}
+              title="CI/CD Integration"
+              index={7}
+            >
+              <p>
                 Add Diffsurge to your CI/CD pipeline to automatically block
                 deploys with breaking changes.
               </p>
-              <p className="text-[14px] font-medium text-zinc-700">GitHub Actions:</p>
+              <p
+                style={{
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                }}
+              >
+                GitHub Actions
+              </p>
               <Code>{`# .github/workflows/api-check.yml
 name: API Schema Check
 on: [pull_request]
@@ -272,13 +749,50 @@ jobs:
             --old api/schema-main.yaml \\
             --new api/schema.yaml \\
             --fail-on-breaking`}</Code>
-              <p className="text-[14px]">
+              <p>
                 The CLI returns standard exit codes so your pipeline blocks
                 automatically: <InlineCode>0</InlineCode> = clean,{" "}
                 <InlineCode>1</InlineCode> = breaking changes,{" "}
                 <InlineCode>2</InlineCode> = error.
               </p>
             </Section>
+
+            {/* ─── Footer CTA ─── */}
+            <FadeIn delay={0.3}>
+              <div
+                className="card-flat"
+                style={{
+                  padding: 32,
+                  textAlign: "center",
+                }}
+              >
+                <p className="micro-label" style={{ marginBottom: 12 }}>
+                  Ready to get started?
+                </p>
+                <p
+                  className="font-editorial"
+                  style={{
+                    fontSize: 20,
+                    color: "var(--text-primary)",
+                    marginBottom: 20,
+                  }}
+                >
+                  Start catching breaking changes today
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Link href="/signup" className="btn-research">
+                    Get Started Free
+                  </Link>
+                </div>
+              </div>
+            </FadeIn>
           </main>
         </div>
       </div>

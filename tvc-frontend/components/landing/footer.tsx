@@ -47,7 +47,7 @@ export function Footer() {
                 <path d="M7 18l7 4 7-4" stroke="#71717A" strokeWidth="1.5" />
               </svg>
               <span
-                className="font-editorial"
+                className="font-medium"
                 style={{
                   fontSize: 16,
                   color: "var(--text-on-dark)",
