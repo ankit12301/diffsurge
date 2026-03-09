@@ -12,13 +12,13 @@
     "proxy",
     "cli"
   ],
-  "homepage": "https://github.com/ankit12301/tvc#readme",
+  "homepage": "https://github.com/ankit12301/diffsurge#readme",
   "bugs": {
-    "url": "https://github.com/ankit12301/tvc/issues"
+    "url": "https://github.com/ankit12301/diffsurge/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ankit12301/tvc.git"
+    "url": "https://github.com/ankit12301/diffsurge.git"
   },
   "license": "MIT",
   "author": "Ankit Mahopatra",

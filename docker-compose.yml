@@ -1,18 +1,18 @@
 services:
   # ──────────────────────────────────────────────────────────────────
-  # TVC Backend Services (using Supabase Postgres + Upstash Redis)
+  # Diffsurge Backend Services (using Supabase Postgres + Upstash Redis)
   # ──────────────────────────────────────────────────────────────────
 
   api:
     build:
-      context: ./tvc-go
+      context: ./diffsurge-go
       dockerfile: Dockerfile.api
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
-      - TVC_STORAGE_POSTGRES_URL=${TVC_STORAGE_POSTGRES_URL}
-      - TVC_STORAGE_REDIS_URL=${TVC_STORAGE_REDIS_URL}
+      - DIFFSURGE_STORAGE_POSTGRES_URL=${DIFFSURGE_STORAGE_POSTGRES_URL}
+      - DIFFSURGE_STORAGE_REDIS_URL=${DIFFSURGE_STORAGE_REDIS_URL}
       - SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
@@ -32,22 +32,22 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - tvc-network
+      - diffsurge-network
     restart: unless-stopped
 
   proxy:
     build:
-      context: ./tvc-go
+      context: ./diffsurge-go
       dockerfile: Dockerfile.proxy
     ports:
       - "8081:8080"
     environment:
-      - TVC_STORAGE_POSTGRES_URL=${TVC_STORAGE_POSTGRES_URL}
-      - TVC_STORAGE_REDIS_URL=${TVC_STORAGE_REDIS_URL}
+      - DIFFSURGE_STORAGE_POSTGRES_URL=${DIFFSURGE_STORAGE_POSTGRES_URL}
+      - DIFFSURGE_STORAGE_REDIS_URL=${DIFFSURGE_STORAGE_REDIS_URL}
       - LOG_LEVEL=info
       - LOG_FORMAT=json
     volumes:
-      - ./tvc-go/configs/proxy.example.yaml:/app/configs/proxy.yaml:ro
+      - ./diffsurge-go/configs/proxy.example.yaml:/app/configs/proxy.yaml:ro
     healthcheck:
       test:
         [
@@ -62,31 +62,31 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - tvc-network
+      - diffsurge-network
     restart: unless-stopped
 
   replayer:
     build:
-      context: ./tvc-go
+      context: ./diffsurge-go
       dockerfile: Dockerfile.replayer
     environment:
-      - TVC_STORAGE_POSTGRES_URL=${TVC_STORAGE_POSTGRES_URL}
-      - TVC_STORAGE_REDIS_URL=${TVC_STORAGE_REDIS_URL}
+      - DIFFSURGE_STORAGE_POSTGRES_URL=${DIFFSURGE_STORAGE_POSTGRES_URL}
+      - DIFFSURGE_STORAGE_REDIS_URL=${DIFFSURGE_STORAGE_REDIS_URL}
       - LOG_LEVEL=info
       - LOG_FORMAT=json
     volumes:
-      - ./tvc-go/configs/replayer.example.yaml:/app/configs/replayer.yaml:ro
+      - ./diffsurge-go/configs/replayer.example.yaml:/app/configs/replayer.yaml:ro
     networks:
-      - tvc-network
+      - diffsurge-network
     restart: unless-stopped
 
   # ──────────────────────────────────────────────────────────────────
-  # TVC Frontend
+  # Diffsurge Frontend
   # ──────────────────────────────────────────────────────────────────
 
   frontend:
     build:
-      context: ./tvc-frontend
+      context: ./diffsurge-frontend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -111,9 +111,9 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - tvc-network
+      - diffsurge-network
     restart: unless-stopped
 
 networks:
-  tvc-network:
+  diffsurge-network:
     driver: bridge

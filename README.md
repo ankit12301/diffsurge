@@ -1,127 +1,118 @@
-# Diffsurge
-#### Deployment Version - 1.4
+# Diffsurge — Traffic Version Control for APIs
 
-**Catch breaking API changes before your users do.**
+Diffsurge helps teams catch API breaking changes before customers do by combining schema diffing, production traffic capture, and replay validation.
 
-Diffsurge captures production traffic, replays it against new deployments, and surfaces breaking changes — before a single user is affected. Schema diffing, traffic replay, and drift reports in one platform.
+[![Go CI](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml)
+[![Frontend CI](https://github.com/diffsurge-org/diffsurge/actions/workflows/frontend.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/frontend.yml)
+[![Release](https://github.com/diffsurge-org/diffsurge/actions/workflows/release.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Architecture
+## Why Diffsurge
 
-```
-┌─────────────┐     ┌──────────┐     ┌──────────────┐
-│   Frontend  │────▶│  Proxy   │────▶│  Target API  │
-│  (Next.js)  │     │ (Go)     │     └──────────────┘
-└──────┬──────┘     └────┬─────┘
-       │                 │ captures traffic
-       │                 ▼
-       │            ┌──────────┐     ┌──────────────┐
-       └───────────▶│  API     │────▶│  PostgreSQL  │
-                    │  (Go)    │     │  (Supabase)  │
-                    └────┬─────┘     └──────────────┘
-                         │
-                    ┌────▼─────┐     ┌──────────────┐
-                    │ Replayer │────▶│    Redis     │
-                    │  (Go)    │     │  (Upstash)   │
-                    └──────────┘     └──────────────┘
-```
+- **CLI first:** compare schemas and payloads in local dev + CI.
+- **Traffic-aware:** capture real API traffic with a low-overhead proxy.
+- **Replay validation:** re-run real production requests against new deployments.
+- **Governance:** review drift, audit activity, and team-level API changes.
 
-| Service | Description | Port |
-|---------|-------------|------|
-| **Frontend** | Next.js 16 dashboard with Supabase auth | 3000 |
-| **API** | Go REST API for projects, traffic, replays, orgs | 8080 |
-| **Proxy** | Go reverse proxy that captures API traffic with PII redaction | 8081 |
-| **Replayer** | Go worker that replays captured traffic and compares responses | — |
+## Demo GIFs
 
-## Tech Stack
+![CLI Diff Demo](assets/gifs/cli-diff.gif)
+![Traffic Capture Demo](assets/gifs/traffic-capture.gif)
+![Replay Report Demo](assets/gifs/replay-report.gif)
+![Dashboard Demo](assets/gifs/dashboard-overview.gif)
 
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Radix UI, TanStack Query
-- **Backend**: Go 1.24, net/http, zerolog, Viper, Prometheus metrics
-- **Auth**: Supabase (OAuth + email/password)
-- **Database**: PostgreSQL (Supabase hosted)
-- **Cache/Queue**: Redis (Upstash hosted)
-- **CI**: GitHub Actions (lint, test, build for Go + frontend)
+GIF assets are tracked in [assets/gifs/README.md](assets/gifs/README.md). Replace placeholder files with real recordings before the public launch.
 
-## Quick Start
+## Architecture at a glance
 
-### Prerequisites
+Diffsurge is a monorepo with three product surfaces:
 
-- Docker & Docker Compose
-- Node.js 20+ (for local frontend dev)
-- Go 1.24+ (for local backend dev)
+- **Go services (`diffsurge-go`)**: CLI, API, proxy, and replay engine.
+- **Next.js app (`diffsurge-frontend`)**: marketing site + authenticated dashboard.
+- **NPM CLI wrapper (`surge-cli-npm`)**: installable distribution of CLI binaries.
 
-### Run with Docker Compose
+High-level runtime flow:
+
+1. Proxy captures sampled traffic and stores request/response metadata.
+2. Replay engine re-executes captured traffic against candidate deployments.
+3. Diffing/comparison logic scores drift and breaking changes.
+4. Dashboard + API expose results for triage and audit.
+
+Detailed architecture and implementation documents are maintained internally.
+
+## Quick start
+
+### 1) Prerequisites
+
+- Go 1.24+
+- Node.js 20+
+- Docker + Docker Compose
+
+### 2) Configure environment
 
 ```bash
-# Clone the repo
-git clone https://github.com/diffsurge/diffsurge.git
-cd diffsurge
+cp .env.example .env
+cp diffsurge-frontend/.env.example diffsurge-frontend/.env.local
+```
 
-# Start all services (reads from .env automatically)
+Update `.env` values for:
+
+- `DIFFSURGE_STORAGE_POSTGRES_URL`
+- `DIFFSURGE_STORAGE_REDIS_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET`
+
+### 3) Run stack
+
+```bash
 docker compose up --build
 ```
 
-Services will be available at:
-- Frontend: http://localhost:3000
-- API: http://localhost:8080
-- Proxy: http://localhost:8081
+Default local endpoints:
 
-### Local Frontend Development
+- Frontend: `http://localhost:3000`
+- API: `http://localhost:8080`
+- Proxy: `http://localhost:8081`
 
-```bash
-cd tvc-frontend
-npm install
-npm run dev
-```
-
-### Local Backend Development
+### 4) Run development workflows
 
 ```bash
-cd tvc-go
-go run ./cmd/api     # API server
-go run ./cmd/proxy   # Proxy server
-go run ./cmd/replayer # Replay worker
+# Go services
+cd diffsurge-go
+make test
+make build
+
+# Frontend
+cd ../diffsurge-frontend
+npm ci
+npm run build
 ```
 
-## Project Structure
+## Repository layout
 
-```
-.
-├── docker-compose.yml       # Full-stack orchestration
-├── .env                     # Environment config for docker-compose
-├── tvc-go/                  # Go backend monorepo
-│   ├── cmd/                 # Entry points (api, proxy, replayer, cli)
-│   ├── internal/            # Business logic
-│   │   ├── api/             # HTTP handlers, middleware, routing
-│   │   ├── config/          # Viper config loader
-│   │   ├── diffing/         # JSON diff engine
-│   │   ├── models/          # Domain models
-│   │   ├── pii/             # PII detection & redaction
-│   │   ├── proxy/           # Traffic capture, sampling
-│   │   ├── replayer/        # Replay engine, comparer
-│   │   └── storage/         # Postgres & Redis stores
-│   ├── pkg/                 # Shared packages (errors, logger)
-│   └── test/                # Integration tests
-├── tvc-frontend/            # Next.js frontend
-│   ├── app/                 # App Router pages
-│   ├── components/          # UI components
-│   ├── lib/                 # API client, Supabase, providers
-│   └── supabase/migrations/ # Database schema migrations
-└── TVC Docs/                # Architecture & development docs
+```text
+diffsurge/
+├── diffsurge-go/          # Go CLI + API + proxy + replay engine
+├── diffsurge-frontend/    # Next.js dashboard + marketing site
+├── surge-cli-npm/   # NPM packaging for CLI binaries
+├── assets/                # GIFs, banners, and visual media
+└── .github/workflows
 ```
 
-## Environment Variables
+## Open-source roadmap
 
-All configuration is via environment variables. See `.env` (root, for docker-compose) and `tvc-frontend/.env.local` (for Next.js local dev).
+We are targeting **1,000 GitHub stars in 60 days** after public launch.
 
-| Variable | Used By | Description |
-|----------|---------|-------------|
-| `TVC_STORAGE_POSTGRES_URL` | Go services | PostgreSQL connection string |
-| `TVC_STORAGE_REDIS_URL` | Go services | Redis connection string (rediss:// for TLS) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Frontend | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Frontend | Supabase anonymous key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Frontend + API | Supabase service role key |
-| `SUPABASE_JWT_SECRET` | API | JWT secret for token verification |
+- Strategy + milestones: internal planning docs
+- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Contributing
+
+Issues and PRs are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for setup, quality checks, and PR expectations.
 
 ## License
 
-All rights reserved.
+Licensed under the MIT License. See [LICENSE](LICENSE).

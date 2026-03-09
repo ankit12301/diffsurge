@@ -22,7 +22,7 @@ docker run equixankit/diffsurge-cli --help
 2. **Add it to your `.env` file** in your project root:
 
 ```env
-SURGE_API_KEY=tvc_live_your_key_here
+SURGE_API_KEY=diffsurge_live_your_key_here
 SURGE_PROJECT_ID=your-project-uuid
 ```
 
@@ -115,11 +115,11 @@ api-check:
 
 | Variable | Description | Default |
 |---|---|---|
-| `SURGE_API_KEY` | Your API key (starts with `tvc_live_`) | — |
+| `SURGE_API_KEY` | Your API key (starts with `diffsurge_live_`) | — |
 | `SURGE_API_URL` | API base URL | `https://api.diffsurge.com` |
 | `SURGE_PROJECT_ID` | Default project ID | — |
 
-All variables can also use the `TVC_` prefix (e.g., `TVC_API_KEY`) as a fallback.
+All variables can also use the `DIFFSURGE_` prefix (e.g., `DIFFSURGE_API_KEY`) as a fallback.
 
 ## Flags
 

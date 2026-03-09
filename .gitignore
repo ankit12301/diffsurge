@@ -17,12 +17,13 @@ dist/
 .netlify
 
 # Environment files
+.env
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Track .env and .env.local for project setup
-# .env is used by docker-compose, .env.local by Next.js
+# Use .env.example templates for setup
+# Keep real .env and .env.local values local only
 
 # Logs
 npm-debug.log*
@@ -55,3 +56,7 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Internal docs (not published)
+Diffsurge Docs/
+TVC Docs/

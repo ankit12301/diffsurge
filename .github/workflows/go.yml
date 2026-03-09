@@ -4,17 +4,17 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'tvc-go/**'
+      - 'diffsurge-go/**'
       - '.github/workflows/go.yml'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'tvc-go/**'
+      - 'diffsurge-go/**'
       - '.github/workflows/go.yml'
 
 defaults:
   run:
-    working-directory: tvc-go
+    working-directory: diffsurge-go
 
 jobs:
   lint:
@@ -26,13 +26,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-          cache-dependency-path: tvc-go/go.sum
+          cache-dependency-path: diffsurge-go/go.sum
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: tvc-go
+          working-directory: diffsurge-go
 
   test:
     name: Test
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-          cache-dependency-path: tvc-go/go.sum
+          cache-dependency-path: diffsurge-go/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -64,7 +64,7 @@ jobs:
         if: github.event_name == 'push'
         uses: codecov/codecov-action@v4
         with:
-          file: tvc-go/coverage.out
+          file: diffsurge-go/coverage.out
           flags: go
         continue-on-error: true
 
@@ -85,7 +85,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-          cache-dependency-path: tvc-go/go.sum
+          cache-dependency-path: diffsurge-go/go.sum
 
       - name: Build CLI
         env:
@@ -94,8 +94,8 @@ jobs:
         run: |
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags "-X github.com/tvc-org/tvc/internal/config.Version=${{ github.sha }}" \
-            -o bin/tvc-${GOOS}-${GOARCH}${EXT} ./cmd/cli
+          go build -ldflags "-X github.com/diffsurge-org/diffsurge/internal/config.Version=${{ github.sha }}" \
+            -o bin/diffsurge-${GOOS}-${GOARCH}${EXT} ./cmd/cli
 
       - name: Build Proxy
         env:
@@ -104,14 +104,14 @@ jobs:
         run: |
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags "-X github.com/tvc-org/tvc/internal/config.Version=${{ github.sha }}" \
-            -o bin/tvc-proxy-${GOOS}-${GOARCH}${EXT} ./cmd/proxy
+          go build -ldflags "-X github.com/diffsurge-org/diffsurge/internal/config.Version=${{ github.sha }}" \
+            -o bin/diffsurge-proxy-${GOOS}-${GOARCH}${EXT} ./cmd/proxy
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tvc-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: tvc-go/bin/
+          name: diffsurge-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: diffsurge-go/bin/
 
   vet:
     name: Vet
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-          cache-dependency-path: tvc-go/go.sum
+          cache-dependency-path: diffsurge-go/go.sum
 
       - name: Go vet
         run: go vet ./...

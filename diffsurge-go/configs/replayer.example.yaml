@@ -1,0 +1,14 @@
+replayer:
+  workers: 10
+  rate_limit: 100
+  timeout: "30s"
+
+storage:
+  # Set via DIFFSURGE_STORAGE_POSTGRES_URL env var
+  postgres_url: ""
+  # Set via DIFFSURGE_STORAGE_REDIS_URL env var
+  redis_url: ""
+
+log:
+  level: "info"
+  format: "json"
