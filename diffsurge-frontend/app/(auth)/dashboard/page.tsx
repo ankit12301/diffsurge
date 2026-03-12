@@ -14,6 +14,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
+import { ErrorState } from "@/components/ui/error-state";
 
 function StatCard({
   label,
@@ -87,7 +88,7 @@ export default function DashboardPage() {
   const { activeProject } = useProject();
   const projectId = activeProject?.id || "";
 
-  const { data: stats } = useQuery({
+  const { data: stats, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ["traffic-stats", projectId],
     queryFn: () => trafficApi.stats(projectId, "24h"),
     enabled: !!projectId,
@@ -95,7 +96,7 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  const { data: replays } = useQuery({
+  const { data: replays, isError: replaysError, refetch: refetchReplays } = useQuery({
     queryKey: ["replays", projectId],
     queryFn: () => replaysApi.list(projectId),
     enabled: !!projectId,
@@ -104,6 +105,19 @@ export default function DashboardPage() {
 
   if (!projectId) {
     return <EmptyDashboard />;
+  }
+
+  if (statsError && replaysError) {
+    return (
+      <ErrorState
+        title="Failed to load dashboard"
+        message="Could not connect to the API. Check your connection and try again."
+        onRetry={() => {
+          refetchStats();
+          refetchReplays();
+        }}
+      />
+    );
   }
 
   const trafficStats = stats?.data;

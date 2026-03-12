@@ -7,6 +7,7 @@ import { useProject } from "@/lib/providers/project-provider";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Filter, RefreshCw } from "lucide-react";
+import { ErrorState } from "@/components/ui/error-state";
 
 const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
@@ -51,7 +52,7 @@ export default function TrafficPage() {
   const [methodFilter, setMethodFilter] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["traffic", projectId, filters],
     queryFn: () => trafficApi.list(projectId, filters),
     enabled: !!projectId,
@@ -67,6 +68,16 @@ export default function TrafficPage() {
           Select a project from the sidebar to view traffic
         </p>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to load traffic"
+        message="Could not fetch traffic data. Check your connection and try again."
+        onRetry={() => refetch()}
+      />
     );
   }
 

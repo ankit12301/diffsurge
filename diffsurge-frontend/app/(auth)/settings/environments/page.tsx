@@ -145,7 +145,6 @@ function EnvironmentsPageContent() {
                     required
                   />
                 </div>
-                <div className="space-y-2"></div>
                 <div className="space-y-2">
                   <Label htmlFor="base_url" required>
                     Base URL

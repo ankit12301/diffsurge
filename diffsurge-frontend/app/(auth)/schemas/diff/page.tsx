@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -29,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingPage } from "@/components/ui/loading-spinner";
 import Link from "next/link";
 import { schemasApi } from "@/lib/api/schemas";
+import { useProject } from "@/lib/providers/project-provider";
 
 interface SchemaVersion {
   id: string;
@@ -125,8 +125,8 @@ function SchemaViewer({
 }
 
 function SchemaDiffPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
   const [baseVersion, setBaseVersion] = useState<string>("");
   const [compareVersion, setCompareVersion] = useState<string>("");
 
@@ -164,7 +164,7 @@ function SchemaDiffPageContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/schemas?project=${projectId}`}>
+          <Link href="/schemas">
             <Button variant="ghost" size="sm">
               <ArrowLeft size={16} />
             </Button>
@@ -358,9 +358,5 @@ function SchemaDiffPageContent() {
 }
 
 export default function SchemaDiffPage() {
-  return (
-    <Suspense fallback={<LoadingPage />}>
-      <SchemaDiffPageContent />
-    </Suspense>
-  );
+  return <SchemaDiffPageContent />;
 }

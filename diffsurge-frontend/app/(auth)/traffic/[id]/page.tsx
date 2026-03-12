@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trafficApi } from "@/lib/api/traffic";
-import { useParams, useSearchParams } from "next/navigation";
+import { useProject } from "@/lib/providers/project-provider";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Copy, Check } from "lucide-react";
 import { useState } from "react";
@@ -49,9 +49,9 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
 
 function TrafficDetailPageContent() {
   const params = useParams();
-  const searchParams = useSearchParams();
+  const { activeProject } = useProject();
   const logId = params.id as string;
-  const projectId = searchParams.get("project") || "";
+  const projectId = activeProject?.id || "";
 
   const { data, isLoading } = useQuery({
     queryKey: ["traffic-log", projectId, logId],
@@ -80,7 +80,7 @@ function TrafficDetailPageContent() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link
-          href={`/traffic?project=${projectId}`}
+          href="/traffic"
           className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
         >
           <ArrowLeft size={18} />
@@ -130,9 +130,5 @@ function TrafficDetailPageContent() {
 }
 
 export default function TrafficDetailPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <TrafficDetailPageContent />
-    </Suspense>
-  );
+  return <TrafficDetailPageContent />;
 }

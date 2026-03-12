@@ -126,6 +126,73 @@ func (sc *SchemaComparer) comparePathItem(path string, oldItem, newItem *openapi
 func (sc *SchemaComparer) compareOperation(path string, oldOp, newOp *openapi3.Operation, diffs *[]Diff, breaking *[]BreakingChange) {
 	sc.compareParameters(path, oldOp.Parameters, newOp.Parameters, diffs, breaking)
 	sc.compareResponses(path, oldOp.Responses, newOp.Responses, diffs, breaking)
+	sc.compareRequestBody(path, oldOp.RequestBody, newOp.RequestBody, diffs, breaking)
+}
+
+func (sc *SchemaComparer) compareRequestBody(path string, oldBody, newBody *openapi3.RequestBodyRef, diffs *[]Diff, breaking *[]BreakingChange) {
+	if oldBody == nil && newBody == nil {
+		return
+	}
+
+	reqPath := path + ".requestBody"
+
+	// Request body added where there was none
+	if oldBody == nil && newBody != nil {
+		if newBody.Value != nil && newBody.Value.Required {
+			*breaking = append(*breaking, BreakingChange{
+				Path:        reqPath,
+				Type:        "request_body_added_required",
+				Description: "A required request body has been added",
+				Severity:    SeverityBreaking,
+			})
+		} else {
+			*diffs = append(*diffs, Diff{
+				Path:     reqPath,
+				Type:     DiffTypeAdded,
+				NewValue: "requestBody",
+				Severity: SeverityInfo,
+			})
+		}
+		return
+	}
+
+	// Request body removed
+	if oldBody != nil && newBody == nil {
+		*diffs = append(*diffs, Diff{
+			Path:     reqPath,
+			Type:     DiffTypeRemoved,
+			OldValue: "requestBody",
+			Severity: SeverityInfo,
+		})
+		return
+	}
+
+	// Both exist — compare request body schemas across content types
+	if oldBody.Value != nil && newBody.Value != nil {
+		// Check if required status changed
+		if !oldBody.Value.Required && newBody.Value.Required {
+			*breaking = append(*breaking, BreakingChange{
+				Path:        reqPath,
+				Type:        "request_body_became_required",
+				Description: "Request body changed from optional to required",
+				Severity:    SeverityBreaking,
+			})
+		}
+
+		if oldBody.Value.Content != nil && newBody.Value.Content != nil {
+			for contentType, oldMediaType := range oldBody.Value.Content {
+				newMediaType := newBody.Value.Content[contentType]
+				if newMediaType == nil {
+					continue
+				}
+				if oldMediaType.Schema != nil && newMediaType.Schema != nil &&
+					oldMediaType.Schema.Value != nil && newMediaType.Schema.Value != nil {
+					schemaPath := fmt.Sprintf("%s.content.%s.schema", reqPath, contentType)
+					sc.compareSchemaObject(schemaPath, oldMediaType.Schema.Value, newMediaType.Schema.Value, diffs, breaking)
+				}
+			}
+		}
+	}
 }
 
 func (sc *SchemaComparer) compareParameters(path string, oldParams, newParams openapi3.Parameters, diffs *[]Diff, breaking *[]BreakingChange) {
@@ -143,18 +210,57 @@ func (sc *SchemaComparer) compareParameters(path string, oldParams, newParams op
 		}
 	}
 
+	// Detect new required parameters (breaking) and new optional parameters (info)
 	for name, newParam := range newMap {
 		paramPath := fmt.Sprintf("%s.params.%s", path, name)
-		if _, exists := oldMap[name]; !exists && newParam.Required {
+		oldParam, exists := oldMap[name]
+		if !exists {
+			if newParam.Required {
+				*breaking = append(*breaking, BreakingChange{
+					Path:        paramPath,
+					Type:        "required_param_added",
+					Description: fmt.Sprintf("New required parameter '%s' added", name),
+					Severity:    SeverityBreaking,
+				})
+			} else {
+				*diffs = append(*diffs, Diff{
+					Path:     paramPath,
+					Type:     DiffTypeAdded,
+					NewValue: name,
+					Severity: SeverityInfo,
+				})
+			}
+			continue
+		}
+
+		// Parameter exists in both — check for breaking changes within it
+		// Check if parameter became required
+		if !oldParam.Required && newParam.Required {
 			*breaking = append(*breaking, BreakingChange{
 				Path:        paramPath,
-				Type:        "required_param_added",
-				Description: fmt.Sprintf("New required parameter '%s' added", name),
+				Type:        "param_became_required",
+				Description: fmt.Sprintf("Parameter '%s' changed from optional to required", name),
 				Severity:    SeverityBreaking,
 			})
 		}
+
+		// Check parameter type change
+		if oldParam.Schema != nil && newParam.Schema != nil &&
+			oldParam.Schema.Value != nil && newParam.Schema.Value != nil {
+			oldType := oldParam.Schema.Value.Type
+			newType := newParam.Schema.Value.Type
+			if oldType != nil && newType != nil && oldType.Slice()[0] != newType.Slice()[0] {
+				*breaking = append(*breaking, BreakingChange{
+					Path:        paramPath,
+					Type:        "param_type_changed",
+					Description: fmt.Sprintf("Parameter '%s' type changed from '%s' to '%s'", name, oldType.Slice()[0], newType.Slice()[0]),
+					Severity:    SeverityBreaking,
+				})
+			}
+		}
 	}
 
+	// Detect removed parameters (breaking)
 	for name := range oldMap {
 		paramPath := fmt.Sprintf("%s.params.%s", path, name)
 		if _, exists := newMap[name]; !exists {
@@ -187,14 +293,13 @@ func (sc *SchemaComparer) compareResponses(path string, oldResponses, newRespons
 		}
 
 		if oldResp.Value != nil && newRespRef.Value != nil {
-			sc.compareResponseContent(respPath, oldResp.Value, newRespRef.Value)
+			sc.compareResponseContent(respPath, oldResp.Value, newRespRef.Value, diffs, breaking)
 		}
 	}
 }
 
-func (sc *SchemaComparer) compareResponseContent(path string, oldResp, newResp *openapi3.Response) {
-	// Extensible: compare response body schemas, content types, etc.
-	// For now, we compare the description changes
+func (sc *SchemaComparer) compareResponseContent(path string, oldResp, newResp *openapi3.Response, diffs *[]Diff, breaking *[]BreakingChange) {
+	// Compare response description changes
 	oldDesc := ""
 	newDesc := ""
 	if oldResp.Description != nil {
@@ -203,8 +308,37 @@ func (sc *SchemaComparer) compareResponseContent(path string, oldResp, newResp *
 	if newResp.Description != nil {
 		newDesc = *newResp.Description
 	}
-	_ = oldDesc
-	_ = newDesc
+	if oldDesc != newDesc {
+		*diffs = append(*diffs, Diff{
+			Path:     path + ".description",
+			Type:     DiffTypeModified,
+			OldValue: oldDesc,
+			NewValue: newDesc,
+			Severity: SeverityInfo,
+		})
+	}
+
+	// Compare response body schemas across content types
+	if oldResp.Content != nil && newResp.Content != nil {
+		for contentType, oldMediaType := range oldResp.Content {
+			newMediaType := newResp.Content[contentType]
+			if newMediaType == nil {
+				*breaking = append(*breaking, BreakingChange{
+					Path:        fmt.Sprintf("%s.content.%s", path, contentType),
+					Type:        "response_content_type_removed",
+					Description: fmt.Sprintf("Response content type '%s' has been removed", contentType),
+					Severity:    SeverityBreaking,
+				})
+				continue
+			}
+			// Compare the response body schema
+			if oldMediaType.Schema != nil && newMediaType.Schema != nil &&
+				oldMediaType.Schema.Value != nil && newMediaType.Schema.Value != nil {
+				schemaPath := fmt.Sprintf("%s.content.%s.schema", path, contentType)
+				sc.compareSchemaObject(schemaPath, oldMediaType.Schema.Value, newMediaType.Schema.Value, diffs, breaking)
+			}
+		}
+	}
 }
 
 func (sc *SchemaComparer) compareSchemas(oldSpec, newSpec *openapi3.T, diffs *[]Diff, breaking *[]BreakingChange) {
@@ -215,6 +349,7 @@ func (sc *SchemaComparer) compareSchemas(oldSpec, newSpec *openapi3.T, diffs *[]
 	oldSchemas := oldSpec.Components.Schemas
 	newSchemas := newSpec.Components.Schemas
 
+	// Check for removed schemas
 	for name := range oldSchemas {
 		schemaPath := fmt.Sprintf("components.schemas.%s", name)
 		if _, exists := newSchemas[name]; !exists {
@@ -227,6 +362,7 @@ func (sc *SchemaComparer) compareSchemas(oldSpec, newSpec *openapi3.T, diffs *[]
 		}
 	}
 
+	// Check for added schemas
 	for name := range newSchemas {
 		schemaPath := fmt.Sprintf("components.schemas.%s", name)
 		if _, exists := oldSchemas[name]; !exists {
@@ -238,6 +374,194 @@ func (sc *SchemaComparer) compareSchemas(oldSpec, newSpec *openapi3.T, diffs *[]
 			})
 		}
 	}
+
+	// Deep compare schemas that exist in both versions
+	for name, oldSchemaRef := range oldSchemas {
+		newSchemaRef, exists := newSchemas[name]
+		if !exists {
+			continue // already handled above
+		}
+		if oldSchemaRef.Value == nil || newSchemaRef.Value == nil {
+			continue
+		}
+		schemaPath := fmt.Sprintf("components.schemas.%s", name)
+		sc.compareSchemaObject(schemaPath, oldSchemaRef.Value, newSchemaRef.Value, diffs, breaking)
+	}
+}
+
+// compareSchemaObject performs deep comparison of two OpenAPI schema objects,
+// detecting property-level breaking changes: type changes, required field
+// additions/removals, property removals, and enum narrowing.
+func (sc *SchemaComparer) compareSchemaObject(path string, oldSchema, newSchema *openapi3.Schema, diffs *[]Diff, breaking *[]BreakingChange) {
+	// 1. Detect type changes
+	if oldSchema.Type != nil && newSchema.Type != nil {
+		oldTypes := oldSchema.Type.Slice()
+		newTypes := newSchema.Type.Slice()
+		if len(oldTypes) > 0 && len(newTypes) > 0 && oldTypes[0] != newTypes[0] {
+			*breaking = append(*breaking, BreakingChange{
+				Path:        path,
+				Type:        "type_changed",
+				Description: fmt.Sprintf("Type changed from '%s' to '%s'", oldTypes[0], newTypes[0]),
+				Severity:    SeverityBreaking,
+			})
+			*diffs = append(*diffs, Diff{
+				Path:     path + ".type",
+				Type:     DiffTypeTypeChanged,
+				OldValue: oldTypes[0],
+				NewValue: newTypes[0],
+				Severity: SeverityBreaking,
+			})
+		}
+	}
+
+	// 2. Detect required field changes
+	oldRequired := toStringSet(oldSchema.Required)
+	newRequired := toStringSet(newSchema.Required)
+
+	// New required fields added (breaking if the property existed before as optional)
+	for field := range newRequired {
+		if !oldRequired[field] {
+			reqPath := fmt.Sprintf("%s.required.%s", path, field)
+			// If the property existed before but was optional, it's breaking
+			// If the property is entirely new AND required, it's also breaking
+			_, existedBefore := oldSchema.Properties[field]
+			if existedBefore {
+				*breaking = append(*breaking, BreakingChange{
+					Path:        reqPath,
+					Type:        "field_became_required",
+					Description: fmt.Sprintf("Field '%s' changed from optional to required", field),
+					Severity:    SeverityBreaking,
+				})
+			} else {
+				*breaking = append(*breaking, BreakingChange{
+					Path:        reqPath,
+					Type:        "required_field_added",
+					Description: fmt.Sprintf("New required field '%s' added", field),
+					Severity:    SeverityBreaking,
+				})
+			}
+		}
+	}
+
+	// Required fields removed (info — relaxing the contract is non-breaking)
+	for field := range oldRequired {
+		if !newRequired[field] {
+			// Only report if the field still exists (just no longer required)
+			if _, stillExists := newSchema.Properties[field]; stillExists {
+				*diffs = append(*diffs, Diff{
+					Path:     fmt.Sprintf("%s.required.%s", path, field),
+					Type:     DiffTypeModified,
+					OldValue: "required",
+					NewValue: "optional",
+					Severity: SeverityInfo,
+				})
+			}
+		}
+	}
+
+	// 3. Detect property changes
+	for propName, oldPropRef := range oldSchema.Properties {
+		propPath := fmt.Sprintf("%s.properties.%s", path, propName)
+		newPropRef, exists := newSchema.Properties[propName]
+		if !exists {
+			// Property removed
+			severity := SeverityWarning
+			changeType := "property_removed"
+			desc := fmt.Sprintf("Property '%s' has been removed", propName)
+			if oldRequired[propName] {
+				severity = SeverityBreaking
+				changeType = "required_property_removed"
+				desc = fmt.Sprintf("Required property '%s' has been removed", propName)
+			}
+			*breaking = append(*breaking, BreakingChange{
+				Path:        propPath,
+				Type:        changeType,
+				Description: desc,
+				Severity:    severity,
+			})
+			*diffs = append(*diffs, Diff{
+				Path:     propPath,
+				Type:     DiffTypeRemoved,
+				OldValue: propName,
+				Severity: severity,
+			})
+			continue
+		}
+
+		// Property exists in both — recursively compare the property schemas
+		if oldPropRef.Value != nil && newPropRef.Value != nil {
+			sc.compareSchemaObject(propPath, oldPropRef.Value, newPropRef.Value, diffs, breaking)
+		}
+	}
+
+	// Detect new properties added
+	for propName := range newSchema.Properties {
+		propPath := fmt.Sprintf("%s.properties.%s", path, propName)
+		if _, exists := oldSchema.Properties[propName]; !exists {
+			*diffs = append(*diffs, Diff{
+				Path:     propPath,
+				Type:     DiffTypeAdded,
+				NewValue: propName,
+				Severity: SeverityInfo,
+			})
+		}
+	}
+
+	// 4. Detect enum changes
+	if len(oldSchema.Enum) > 0 || len(newSchema.Enum) > 0 {
+		sc.compareEnums(path, oldSchema.Enum, newSchema.Enum, diffs, breaking)
+	}
+
+	// 5. Compare items schema (for array types)
+	if oldSchema.Items != nil && newSchema.Items != nil &&
+		oldSchema.Items.Value != nil && newSchema.Items.Value != nil {
+		sc.compareSchemaObject(path+".items", oldSchema.Items.Value, newSchema.Items.Value, diffs, breaking)
+	}
+}
+
+// compareEnums detects added and removed enum values.
+// Removing an enum value is breaking (narrowing the contract).
+// Adding an enum value is non-breaking (widening the contract).
+func (sc *SchemaComparer) compareEnums(path string, oldEnum, newEnum []interface{}, diffs *[]Diff, breaking *[]BreakingChange) {
+	oldSet := make(map[string]bool)
+	for _, v := range oldEnum {
+		oldSet[fmt.Sprintf("%v", v)] = true
+	}
+	newSet := make(map[string]bool)
+	for _, v := range newEnum {
+		newSet[fmt.Sprintf("%v", v)] = true
+	}
+
+	for val := range oldSet {
+		if !newSet[val] {
+			*breaking = append(*breaking, BreakingChange{
+				Path:        fmt.Sprintf("%s.enum", path),
+				Type:        "enum_value_removed",
+				Description: fmt.Sprintf("Enum value '%s' has been removed", val),
+				Severity:    SeverityBreaking,
+			})
+		}
+	}
+
+	for val := range newSet {
+		if !oldSet[val] {
+			*diffs = append(*diffs, Diff{
+				Path:     fmt.Sprintf("%s.enum", path),
+				Type:     DiffTypeAdded,
+				NewValue: val,
+				Severity: SeverityInfo,
+			})
+		}
+	}
+}
+
+// toStringSet converts a slice of strings to a set (map) for O(1) lookup.
+func toStringSet(items []string) map[string]bool {
+	set := make(map[string]bool, len(items))
+	for _, item := range items {
+		set[item] = true
+	}
+	return set
 }
 
 func loadOpenAPISpec(path string) (*openapi3.T, error) {

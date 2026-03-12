@@ -45,6 +45,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { organizationsApi } from "@/lib/api/organizations";
 import { toast } from "sonner";
+import { useOrganization } from "@/lib/providers/organization-provider";
 
 interface TeamMember {
   id: string;
@@ -57,7 +58,8 @@ interface TeamMember {
 
 function TeamPageContent() {
   const searchParams = useSearchParams();
-  const orgId = searchParams.get("org") || "";
+  const { activeOrg } = useOrganization();
+  const orgId = searchParams.get("org") || activeOrg?.id || "";
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");

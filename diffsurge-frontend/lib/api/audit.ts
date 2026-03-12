@@ -49,6 +49,7 @@ export const auditApi = {
     const queryString = params.toString();
     const url = `/api/v1/organizations/${orgId}/audit-logs${queryString ? `?${queryString}` : ""}`;
 
-    return await apiRequest<AuditLog[]>(url);
+    const response = await apiRequest<{ data: AuditLog[] }>(url);
+    return response.data;
   },
 };

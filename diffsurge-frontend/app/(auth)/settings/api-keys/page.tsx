@@ -38,10 +38,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { apiKeysApi } from "@/lib/api/api-keys";
 import { toast } from "sonner";
+import { useOrganization } from "@/lib/providers/organization-provider";
 
 function ApiKeysPageContent() {
   const searchParams = useSearchParams();
-  const orgId = searchParams.get("org") || "";
+  const { activeOrg } = useOrganization();
+  const orgId = searchParams.get("org") || activeOrg?.id || "";
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState("");
@@ -147,8 +149,8 @@ function ApiKeysPageContent() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                    <code className="flex-1 text-sm font-mono">{newKey}</code>
+                  <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 min-w-0">
+                    <code className="flex-1 min-w-0 break-all text-sm font-mono">{newKey}</code>
                     <CopyButton value={newKey} />
                   </div>
                 </div>

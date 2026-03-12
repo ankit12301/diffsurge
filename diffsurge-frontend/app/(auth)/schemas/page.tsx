@@ -6,6 +6,7 @@ import { schemasApi } from "@/lib/api/schemas";
 import { useProject } from "@/lib/providers/project-provider";
 import { FileCode2, Plus, GitBranch, GitCommit } from "lucide-react";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function SchemasPage() {
   const { activeProject } = useProject();
@@ -16,7 +17,7 @@ export default function SchemasPage() {
   const [schemaType, setSchemaType] = useState("openapi");
   const [content, setContent] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["schemas", projectId],
     queryFn: () => schemasApi.list(projectId),
     enabled: !!projectId,
@@ -53,6 +54,16 @@ export default function SchemasPage() {
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-sm text-zinc-500">Select a project from the sidebar to manage schemas</p>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to load schemas"
+        message="Could not fetch schema data. Check your connection and try again."
+        onRetry={() => refetch()}
+      />
     );
   }
 

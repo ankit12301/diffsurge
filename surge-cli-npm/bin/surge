@@ -6,8 +6,8 @@ const os = require("os");
 const fs = require("fs");
 
 const isWindows = os.platform() === "win32";
-const binaryName = isWindows ? "surge.exe" : "surge";
-const binaryPath = path.join(__dirname, binaryName);
+const engineName = isWindows ? "surge-engine.exe" : "surge-engine";
+const binaryPath = path.join(__dirname, engineName);
 
 // Load .env from the current working directory and merge into process.env
 function loadDotEnv() {
@@ -39,6 +39,15 @@ function loadDotEnv() {
 }
 
 loadDotEnv();
+
+// Verify the Go binary exists before attempting to execute
+if (!fs.existsSync(binaryPath)) {
+  console.error(`surge engine binary not found at: ${binaryPath}`);
+  console.error(`\nThis usually means the postinstall step did not complete.`);
+  console.error(`Fix: run "npm rebuild diffsurge" or reinstall with "npm install -g diffsurge"`);
+  console.error(`Alt: use Docker instead: docker run equixankit/diffsurge-cli`);
+  process.exit(1);
+}
 
 try {
   execFileSync(binaryPath, process.argv.slice(2), {

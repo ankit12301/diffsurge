@@ -36,10 +36,16 @@ function main() {
   const binaryName = getPlatformBinary();
   const isWindows = os.platform() === "win32";
   const binDir = path.join(__dirname, "bin");
-  const dest = path.join(binDir, isWindows ? "surge.exe" : "surge");
+  const engineName = isWindows ? "surge-engine.exe" : "surge-engine";
+  const dest = path.join(binDir, engineName);
 
+  // Check if the Go binary is already extracted and is a real binary (not a text file)
   if (fs.existsSync(dest)) {
-    return;
+    const stat = fs.statSync(dest);
+    // A real Go binary will be > 1MB; skip re-extraction if it looks valid
+    if (stat.size > 1024 * 1024) {
+      return;
+    }
   }
 
   const gzPath = path.join(__dirname, "binaries", `${binaryName}.gz`);
@@ -62,7 +68,7 @@ function main() {
     fs.chmodSync(dest, 0o755);
   }
 
-  console.log("surge installed successfully!");
+  console.log(`surge installed successfully! (${engineName}, ${(decompressed.length / 1024 / 1024).toFixed(1)} MB)`);
 }
 
 main();

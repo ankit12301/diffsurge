@@ -6,6 +6,7 @@ import { useProject } from "@/lib/providers/project-provider";
 import Link from "next/link";
 import { Plus, Play, Square } from "lucide-react";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
 
 const statusColors: Record<string, string> = {
   pending: "bg-zinc-50 text-zinc-600",
@@ -20,7 +21,7 @@ export default function ReplayPage() {
   const projectId = activeProject?.id || "";
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["replays", projectId],
     queryFn: () => replaysApi.list(projectId),
     enabled: !!projectId,
@@ -53,6 +54,16 @@ export default function ReplayPage() {
           Select a project from the sidebar to manage replays
         </p>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to load replays"
+        message="Could not fetch replay data. Check your connection and try again."
+        onRetry={() => refetch()}
+      />
     );
   }
 

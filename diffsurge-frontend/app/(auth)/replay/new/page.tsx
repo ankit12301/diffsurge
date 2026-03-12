@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { replaysApi } from "@/lib/api/replays";
 import { projectsApi } from "@/lib/api/projects";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useProject } from "@/lib/providers/project-provider";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 function NewReplayPageContent() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const { activeProject } = useProject();
+  const projectId = activeProject?.id || "";
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -39,7 +40,7 @@ function NewReplayPageContent() {
       }),
     onSuccess: () => {
       toast.success("Replay session created");
-      router.push(`/replay?project=${projectId}`);
+      router.push("/replay");
     },
     onError: () => toast.error("Failed to create replay session"),
   });
@@ -48,7 +49,7 @@ function NewReplayPageContent() {
     <div className="mx-auto max-w-xl space-y-6">
       <div className="flex items-center gap-3">
         <Link
-          href={`/replay?project=${projectId}`}
+          href="/replay"
           className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
         >
           <ArrowLeft size={18} />
@@ -156,7 +157,7 @@ function NewReplayPageContent() {
 
         <div className="flex justify-end gap-2 pt-2">
           <Link
-            href={`/replay?project=${projectId}`}
+            href="/replay"
             className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
           >
             Cancel
@@ -175,9 +176,5 @@ function NewReplayPageContent() {
 }
 
 export default function NewReplayPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" /></div>}>
-      <NewReplayPageContent />
-    </Suspense>
-  );
+  return <NewReplayPageContent />;
 }

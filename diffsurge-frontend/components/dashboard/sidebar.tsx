@@ -10,6 +10,7 @@ import {
   Radio,
   RefreshCw,
   FileCode2,
+  ClipboardList,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/traffic", label: "Traffic", icon: Radio },
   { href: "/replay", label: "Replay", icon: RefreshCw },
   { href: "/schemas", label: "Schemas", icon: FileCode2 },
+  { href: "/audit", label: "Audit Log", icon: ClipboardList },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { Clock, User, Activity, Filter } from "lucide-react";
+import { Clock, User, Activity } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -33,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
 import { auditApi, AuditAction } from "@/lib/api/audit";
+import { useOrganization } from "@/lib/providers/organization-provider";
 
 const actionBadgeVariant = (action: string) => {
   if (action === "create" || action === "invite") return "success";
@@ -42,8 +41,8 @@ const actionBadgeVariant = (action: string) => {
 };
 
 function AuditLogPageContent() {
-  const searchParams = useSearchParams();
-  const orgId = searchParams.get("org") || "";
+  const { activeOrg } = useOrganization();
+  const orgId = activeOrg?.id || "";
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [resourceFilter, setResourceFilter] = useState<string>("all");
 
@@ -219,9 +218,5 @@ function AuditLogPageContent() {
 }
 
 export default function AuditLogPage() {
-  return (
-    <Suspense fallback={<LoadingPage />}>
-      <AuditLogPageContent />
-    </Suspense>
-  );
+  return <AuditLogPageContent />;
 }
