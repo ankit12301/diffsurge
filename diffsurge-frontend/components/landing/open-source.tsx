@@ -182,7 +182,7 @@ export function OpenSource() {
               {/* GitHub activity visual */}
               <div
                 className="card"
-                style={{ padding: 24, cursor: "default" }}
+                style={{ padding: 24, cursor: "default", overflow: "hidden" }}
               >
                 <p
                   style={{
@@ -201,15 +201,17 @@ export function OpenSource() {
                     display: "flex",
                     gap: 3,
                     overflow: "hidden",
+                    width: "100%",
                   }}
                 >
-                  {Array.from({ length: 40 }, (_, week) => (
+                  {Array.from({ length: 52 }, (_, week) => (
                     <div
                       key={week}
                       style={{
                         display: "flex",
                         flexDirection: "column",
                         gap: 3,
+                        flexShrink: 0,
                       }}
                     >
                       {Array.from({ length: 7 }, (_, day) => {
