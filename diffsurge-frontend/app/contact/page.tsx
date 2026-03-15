@@ -3,24 +3,38 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/constants";
-import { ArrowLeft, Mail, Send } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Placeholder — will be connected to Resend later
-    await new Promise((r) => setTimeout(r, 1000));
-    setSubmitted(true);
-    setLoading(false);
+    setError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Something went wrong.");
+      }
+      router.push("/thank-you");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -49,27 +63,6 @@ export default function ContactPage() {
       </header>
 
       <div className="mx-auto max-w-lg px-6 py-16 md:py-24">
-        {submitted ? (
-          <div className="text-center">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}>
-              <Send size={24} style={{ color: "var(--text-muted)" }} />
-            </div>
-            <h1 className="text-2xl font-medium" style={{ color: "var(--text-primary)" }}>
-              Message sent
-            </h1>
-            <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Thanks for reaching out. We&apos;ll get back to you as soon as
-              possible.
-            </p>
-            <Link
-              href="/"
-              className="mt-6 inline-block text-sm font-medium"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Back to home
-            </Link>
-          </div>
-        ) : (
           <>
             <div className="mb-8">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg mb-4" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}>
@@ -80,9 +73,16 @@ export default function ContactPage() {
               </h1>
               <p className="mt-2 text-[14px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 Have a question, feature request, or want to discuss enterprise
-                plans? Drop us a message.
+                plans? Drop us a message or email us directly at{" "}
+                <a href="mailto:ankit@diffsurge.com" style={{ color: "var(--text-primary)", textDecoration: "underline" }}>ankit@diffsurge.com</a>.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-4 rounded-lg border px-4 py-3 text-sm" style={{ borderColor: "var(--accent-red)", color: "var(--accent-red)", background: "rgba(239,68,68,0.05)" }}>
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
@@ -175,7 +175,6 @@ export default function ContactPage() {
               </Button>
             </form>
           </>
-        )}
       </div>
     </div>
   );
