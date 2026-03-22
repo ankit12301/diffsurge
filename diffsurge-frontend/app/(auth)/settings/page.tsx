@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { CopyButton } from "@/components/ui/copy-button";
 
 export default function SettingsPage() {
   const { activeOrg, isLoading: orgLoading } = useOrganization();
@@ -193,6 +194,12 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-zinc-900">
                       {project.name}
                     </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <code className="text-[11px] font-mono text-zinc-400">
+                        {project.id}
+                      </code>
+                      <CopyButton value={project.id} />
+                    </div>
                     {project.description && (
                       <p className="mt-0.5 text-xs text-zinc-400">
                         {project.description}

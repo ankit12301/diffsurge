@@ -16,14 +16,16 @@ type Server struct {
 	log        *logger.Logger
 	capture    *TrafficCapture
 	router     *Router
+	auth       *ProxyAuth
 }
 
-func NewServer(cfg *config.ProxyConfig, log *logger.Logger, capture *TrafficCapture) *Server {
+func NewServer(cfg *config.ProxyConfig, log *logger.Logger, capture *TrafficCapture, keyStore APIKeyStore) *Server {
 	s := &Server{
 		config:  cfg,
 		log:     log,
 		capture: capture,
 		router:  NewRouter(cfg.Routes, log),
+		auth:    NewProxyAuth(keyStore, log),
 	}
 
 	handler := s.buildHandler()
@@ -46,7 +48,9 @@ func (s *Server) buildHandler() http.Handler {
 	mux.HandleFunc("/metrics", s.metricsHandler)
 
 	proxyHandler := s.router.Handler()
+	// Auth middleware resolves API key → project context BEFORE capture
 	proxyHandler = s.capture.Middleware(proxyHandler)
+	proxyHandler = s.auth.Middleware(proxyHandler)
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" || r.URL.Path == "/metrics" {

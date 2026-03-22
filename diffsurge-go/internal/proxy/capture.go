@@ -251,6 +251,8 @@ func (tc *TrafficCapture) enqueue(r *http.Request, reqBody []byte, rec *response
 
 	trafficLog := &models.TrafficLog{
 		ID:              uuid.New(),
+		ProjectID:       GetProjectIDFromContext(r.Context()),
+		EnvironmentID:   GetEnvironmentIDFromContext(r.Context()),
 		Method:          r.Method,
 		Path:            r.URL.Path,
 		QueryParams:     queryParams,

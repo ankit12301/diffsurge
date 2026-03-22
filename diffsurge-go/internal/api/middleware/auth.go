@@ -27,6 +27,7 @@ const (
 	UserIDKey    contextKey = "user_id"
 	UserEmailKey contextKey = "user_email"
 	UserRoleKey  contextKey = "user_role"
+	ProjectIDKey contextKey = "project_id"
 )
 
 type AuthConfig struct {
@@ -143,6 +144,9 @@ func (a *Auth) validateAPIKey(r *http.Request, fullKey string) error {
 	// Set org context from API key
 	ctx := context.WithValue(r.Context(), UserIDKey, apiKey.OrganizationID)
 	ctx = context.WithValue(ctx, UserRoleKey, "api_key")
+	if apiKey.ProjectID != nil {
+		ctx = context.WithValue(ctx, ProjectIDKey, *apiKey.ProjectID)
+	}
 	*r = *r.WithContext(ctx)
 
 	return nil
@@ -346,6 +350,13 @@ func extractToken(r *http.Request) string {
 
 func GetUserID(ctx context.Context) uuid.UUID {
 	if id, ok := ctx.Value(UserIDKey).(uuid.UUID); ok {
+		return id
+	}
+	return uuid.Nil
+}
+
+func GetProjectID(ctx context.Context) uuid.UUID {
+	if id, ok := ctx.Value(ProjectIDKey).(uuid.UUID); ok {
 		return id
 	}
 	return uuid.Nil

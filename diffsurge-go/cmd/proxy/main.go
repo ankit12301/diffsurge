@@ -37,6 +37,7 @@ func main() {
 	}
 
 	var store proxy.TrafficStore
+	var keyStore proxy.APIKeyStore
 	if cfg.Storage.PostgresURL != "" {
 		pgStore, err := storage.NewPostgresStore(cfg.Storage.PostgresURL)
 		if err != nil {
@@ -44,6 +45,7 @@ func main() {
 		}
 		defer pgStore.Close()
 		store = pgStore
+		keyStore = pgStore
 		log.Info().Msg("Connected to PostgreSQL")
 	} else {
 		log.Warn().Msg("No database configured, traffic will be captured but not persisted")
@@ -58,7 +60,7 @@ func main() {
 		log,
 	)
 
-	srv := proxy.NewServer(&cfg.Proxy, log, capture)
+	srv := proxy.NewServer(&cfg.Proxy, log, capture, keyStore)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
