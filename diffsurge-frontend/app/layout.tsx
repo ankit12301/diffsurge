@@ -65,6 +65,18 @@ export const metadata: Metadata = {
         height: 630,
         alt: "Diffsurge — Catch breaking API changes before your users do",
       },
+      {
+        url: "/poster_1.png",
+        width: 1200,
+        height: 630,
+        alt: "Diffsurge — Schema diffing and traffic replay",
+      },
+      {
+        url: "/poster_2.png",
+        width: 1200,
+        height: 630,
+        alt: "Diffsurge — API drift detection and governance",
+      },
     ],
   },
   twitter: {
@@ -72,7 +84,7 @@ export const metadata: Metadata = {
     title: "Diffsurge — Catch breaking API changes before your users do",
     description:
       "Schema diffing, traffic replay, and drift reports in one CLI. Diffsurge surfaces breaking API changes before a single user is affected.",
-    images: ["/og.png"],
+    images: ["/og.png", "/poster_1.png", "/poster_2.png"],
   },
   alternates: {
     canonical: "https://diffsurge.com",

@@ -1,5 +1,7 @@
 # Diffsurge — Traffic Version Control for APIs
 
+![Diffsurge](assets/banner/diffsurge_og.png)
+
 Diffsurge helps teams catch API breaking changes before customers do by combining schema diffing, production traffic capture, and replay validation.
 
 [![Go CI](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml)
