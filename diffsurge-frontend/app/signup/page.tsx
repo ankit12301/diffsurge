@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { siteConfig } from "@/lib/constants";
 import Link from "next/link";
-
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { Github, MoveRight } from "lucide-react";
+import { motion } from "framer-motion";
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,27 +59,10 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center px-4"
-        style={{ background: "var(--bg-primary)" }}
-      >
-        <div
-          className="bg-research-grid fixed inset-0 pointer-events-none"
-          style={{ opacity: 0.4 }}
-        />
-        <div className="relative w-full max-w-sm text-center">
+      <AuthLayout>
+        <motion.div className="flex flex-col items-center justify-center text-center">
           <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              border: "1px solid var(--border-light)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 16px",
-              color: "var(--accent-teal)",
-            }}
+            className="h-12 w-12 rounded-full border border-indigo-200 flex items-center justify-center mb-4 text-indigo-600 bg-indigo-50"
           >
             <svg
               width="24"
@@ -87,335 +72,140 @@ export default function SignupPage() {
               stroke="currentColor"
               strokeWidth={1.5}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1
-            className="font-editorial"
-            style={{ fontSize: 24, color: "var(--text-primary)" }}
-          >
-            Check your email
-          </h1>
-          <p
-            style={{
-              marginTop: 12,
-              fontSize: 14,
-              color: "var(--text-muted)",
-              lineHeight: 1.6,
-            }}
-          >
-            We&apos;ve sent a verification link to{" "}
-            <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>.
-            Click the link to activate your account.
+          <h1 className="text-2xl font-bold text-zinc-950 mb-3">Check your email</h1>
+          <p className="text-zinc-500 mb-6 max-w-sm">
+            We&apos;ve sent a verification link to <strong className="text-zinc-900">{email}</strong>. Click the link to activate your account.
           </p>
           <Link
             href="/login"
-            style={{
-              display: "inline-block",
-              marginTop: 24,
-              fontSize: 13,
-              color: "var(--text-muted)",
-              textDecoration: "underline",
-              textUnderlineOffset: 3,
-            }}
+            className="text-indigo-600 hover:text-indigo-500 text-sm font-medium hover:underline"
           >
             Back to login
           </Link>
-        </div>
-      </div>
+        </motion.div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center px-4"
-      style={{ background: "var(--bg-primary)" }}
-    >
-      <div
-        className="bg-research-grid fixed inset-0 pointer-events-none"
-        style={{ opacity: 0.4 }}
-      />
-
-      <div className="relative w-full max-w-sm">
-        {/* Logo */}
-        <div style={{ marginBottom: 40, textAlign: "center" }}>
-          <Link
-            href="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              textDecoration: "none",
-              marginBottom: 32,
-            }}
-          >
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="6" fill="#1A1714" />
-              <path d="M7 10l7-4 7 4-7 4-7-4z" fill="#A1A1AA" />
-              <path d="M7 14l7 4 7-4" stroke="#fff" strokeWidth="1.5" />
-              <path d="M7 18l7 4 7-4" stroke="#71717A" strokeWidth="1.5" />
-            </svg>
-            <span
-              className="font-editorial"
-              style={{ fontSize: 20, color: "var(--text-primary)" }}
-            >
-              {siteConfig.name}
-            </span>
-          </Link>
-
-          <h1
-            className="font-editorial"
-            style={{
-              fontSize: 28,
-              lineHeight: 1.2,
-              color: "var(--text-primary)",
-              marginTop: 8,
-            }}
-          >
-            Create your account
-          </h1>
-          <p
-            style={{
-              marginTop: 8,
-              fontSize: 14,
-              color: "var(--text-muted)",
-            }}
-          >
-            Start catching API breaking changes today
-          </p>
+    <AuthLayout>
+      <motion.div 
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4 }}
+        className="w-full flex flex-col items-center sm:items-stretch"
+      >
+        <div className="mb-8 text-center sm:text-left">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 mb-2">Create your account</h2>
+          <p className="text-zinc-500">Start catching API breaking changes today</p>
         </div>
 
-        {/* OAuth */}
-        <div style={{ marginBottom: 24 }}>
-          <button
+        <div className="space-y-6">
+          <button 
+            type="button"
             onClick={() => handleOAuth("github")}
-            className="card-flat"
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              padding: "10px 16px",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
-              color: "var(--text-secondary)",
-              transition: "border-color 0.2s",
-            }}
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium py-2.5 px-4 rounded-xl transition-all shadow-sm"
           >
-            <svg
-              style={{ width: 16, height: 16 }}
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
+            <Github className="w-5 h-5" />
             Continue with GitHub
           </button>
-        </div>
 
-        {/* Divider */}
-        <div
-          style={{
-            position: "relative",
-            marginBottom: 24,
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                borderTop: "1px solid var(--border-subtle)",
-              }}
-            />
-          </div>
-          <span
-            className="micro-label"
-            style={{
-              position: "relative",
-              padding: "0 12px",
-              background: "var(--bg-primary)",
-              fontSize: 10,
-            }}
-          >
-            or
-          </span>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSignup}>
-          {error && (
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 16,
-                fontSize: 13,
-                background: "rgba(199, 116, 74, 0.08)",
-                color: "var(--accent-orange)",
-                border: "1px solid rgba(199, 116, 74, 0.15)",
-              }}
-            >
-              {error}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-zinc-200" />
             </div>
-          )}
-
-          <div style={{ marginBottom: 16 }}>
-            <label
-              htmlFor="org"
-              className="micro-label"
-              style={{ display: "block", marginBottom: 8, fontSize: 11 }}
-            >
-              Organization name
-            </label>
-            <input
-              id="org"
-              type="text"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              required
-              placeholder="Acme Inc."
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                fontSize: 14,
-                borderRadius: 8,
-                border: "1px solid var(--border-light)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                outline: "none",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "var(--accent-purple)")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border-light)")
-              }
-            />
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-zinc-500">Or sign up with email</span>
+            </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label
-              htmlFor="email"
-              className="micro-label"
-              style={{ display: "block", marginBottom: 8, fontSize: 11 }}
+          <form className="space-y-4" onSubmit={handleSignup}>
+            {error && (
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  fontSize: 13,
+                  background: "rgba(199, 116, 74, 0.08)",
+                  color: "var(--accent-orange)",
+                  border: "1px solid rgba(199, 116, 74, 0.15)",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="orgName" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-700">
+                Organization Name
+              </label>
+              <input
+                type="text"
+                id="orgName"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="Acme Inc."
+                className="flex h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-700">
+                Work Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="flex h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-700">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+                className="flex h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
+                required
+                minLength={8}
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                Must be at least 8 characters long.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-indigo-600 text-white hover:bg-indigo-700 h-11 px-4 py-2 mt-2 shadow-sm"
             >
-              Work email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@company.com"
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                fontSize: 14,
-                borderRadius: 8,
-                border: "1px solid var(--border-light)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                outline: "none",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "var(--accent-purple)")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border-light)")
-              }
-            />
-          </div>
+              {loading ? "Creating account..." : "Create account"}
+              <MoveRight className="w-4 h-4 ml-1" />
+            </button>
+          </form>
 
-          <div style={{ marginBottom: 24 }}>
-            <label
-              htmlFor="password"
-              className="micro-label"
-              style={{ display: "block", marginBottom: 8, fontSize: 11 }}
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              placeholder="Min. 8 characters"
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                fontSize: 14,
-                borderRadius: 8,
-                border: "1px solid var(--border-light)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                outline: "none",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = "var(--accent-purple)")
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border-light)")
-              }
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-research"
-            style={{
-              width: "100%",
-              height: 42,
-              fontSize: 14,
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
-
-        <p
-          style={{
-            marginTop: 28,
-            textAlign: "center",
-            fontSize: 13,
-            color: "var(--text-muted)",
-          }}
-        >
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            style={{
-              fontWeight: 500,
-              color: "var(--text-primary)",
-              textDecoration: "underline",
-              textUnderlineOffset: 3,
-            }}
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+          <p className="text-center text-sm text-zinc-500">
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </motion.div>
+    </AuthLayout>
   );
 }
