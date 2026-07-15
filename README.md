@@ -1,15 +1,15 @@
-# DiffSurge: Catch breaking API changes before your users do
+# Surge: Catch breaking API changes before your users do
 
 Replay production traffic against new API versions. Detect schema + behavior breakages in <60s.
 
-[![Go CI](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/go.yml)
-[![Frontend CI](https://github.com/diffsurge-org/diffsurge/actions/workflows/frontend.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/frontend.yml)
-[![Release](https://github.com/diffsurge-org/diffsurge/actions/workflows/release.yml/badge.svg)](https://github.com/diffsurge-org/diffsurge/actions/workflows/release.yml)
-[![npm](https://img.shields.io/npm/v/diffsurge)](https://www.npmjs.com/package/diffsurge)
-[![docker](https://img.shields.io/docker/v/diffsurge/cli?label=docker)](https://hub.docker.com/r/diffsurge/cli)
+[![Go CI](https://github.com/surge-org/surge/actions/workflows/go.yml/badge.svg)](https://github.com/surge-org/surge/actions/workflows/go.yml)
+[![Frontend CI](https://github.com/surge-org/surge/actions/workflows/frontend.yml/badge.svg)](https://github.com/surge-org/surge/actions/workflows/frontend.yml)
+[![Release](https://github.com/surge-org/surge/actions/workflows/release.yml/badge.svg)](https://github.com/surge-org/surge/actions/workflows/release.yml)
+[![npm](https://img.shields.io/npm/v/surge)](https://www.npmjs.com/package/surge)
+[![docker](https://img.shields.io/docker/v/surge/cli?label=docker)](https://hub.docker.com/r/surge/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Why DiffSurge
+## Why surge
 
 - **CLI first:** compare schemas and payloads in local dev + CI.
 - **Traffic-aware:** capture real API traffic with a low-overhead proxy service.
@@ -19,26 +19,26 @@ Replay production traffic against new API versions. Detect schema + behavior bre
 ## Quickstart
 
 ```bash
-npm install -g diffsurge
+npm install -g surge
 surge schema diff --old openapi-v1.yaml --new openapi-v2.yaml --fail-on-breaking
 surge replay --source traffic.json --target http://localhost:8080
 ```
 
-`npm install -g diffsurge` installs a prebuilt CLI binary on supported platforms, so Go is not required for a normal npm install.
+`npm install -g surge` installs a prebuilt CLI binary on supported platforms, so Go is not required for a normal npm install.
 
 ### Alternative install methods
 
 ```bash
 # If npm fails — pre-built binary:
-curl -sSL https://get.diffsurge.com/install.sh | sh
+curl -sSL https://get.surge.com/install.sh | sh
 
 # Or Docker:
-docker run -v $(pwd):/work diffsurge/cli surge replay
+docker run -v $(pwd):/work surge/cli surge replay
 ```
 
 ## Comparison
 
-| Feature | DiffSurge | Postman | Keploy |
+| Feature | surge | Postman | Keploy |
 |---|---|---|---|
 | Production traffic replay | ✅ | ❌ | ✅ |
 | Schema + behavior diff | ✅ | ❌ | ⚠️ |
@@ -46,10 +46,10 @@ docker run -v $(pwd):/work diffsurge/cli surge replay
 
 ## Architecture at a glance
 
-Diffsurge is a monorepo with three product surfaces:
+surge is a monorepo with three product surfaces:
 
-- **Go services (`diffsurge-go`)**: CLI, API, proxy, and replay engine.
-- **Next.js app (`diffsurge-frontend`)**: marketing site + authenticated dashboard.
+- **Go services (`surge-go`)**: CLI, API, proxy, and replay engine.
+- **Next.js app (`surge-frontend`)**: marketing site + authenticated dashboard.
 - **NPM CLI wrapper (`surge-cli-npm`)**: installable distribution of CLI binaries.
 
 ```
@@ -65,7 +65,7 @@ Diffsurge is a monorepo with three product surfaces:
        ▼                          ▼                         ▼
 ┌─────────────┐         ┌──────────────────┐      ┌──────────────────┐
 │  API Server │         │ Next.js Frontend │      │  Traffic Proxy   │
-│ (diffsurge- │         │ (Dashboard +     │      │ (diffsurge-      │
+│ (surge- │         │ (Dashboard +     │      │ (surge-      │
 │    api)     │ ◄──────►│  Marketing site) │      │   proxy)         │
 └──────┬──────┘         └──────┬───────────┘      └────────┬─────────┘
        │                       │ Auth (JWT/JWKS)           │ captures
@@ -83,7 +83,7 @@ Diffsurge is a monorepo with three product surfaces:
        │ replay results
 ┌──────┴──────────┐      ┌──────────────┐
 │ Replay Engine   │      │  Upstash     │
-│ (diffsurge-     │◄────►│  Redis       │
+│ (surge-     │◄────►│  Redis       │
 │   replayer)     │      │  (job queue) │
 └─────────────────┘      └──────────────┘
 ```
@@ -107,15 +107,15 @@ High-level runtime flow:
 
 ```bash
 cp .env.example .env
-cp diffsurge-frontend/.env.example diffsurge-frontend/.env.local
+cp surge-frontend/.env.example surge-frontend/.env.local
 ```
 
 The table below explains every required variable and which service uses it:
 
 | Variable | Used by | Why it's needed |
 |---|---|---|
-| `DIFFSURGE_STORAGE_POSTGRES_URL` | api, proxy, replayer | Primary datastore — PostgreSQL connection string (e.g. Supabase DB URL) where traffic captures and diff results are persisted. |
-| `DIFFSURGE_STORAGE_REDIS_URL` | api, replayer | Job queue — Upstash/Redis URL used by the replay engine to enqueue and dequeue replay sessions. |
+| `surge_STORAGE_POSTGRES_URL` | api, proxy, replayer | Primary datastore — PostgreSQL connection string (e.g. Supabase DB URL) where traffic captures and diff results are persisted. |
+| `surge_STORAGE_REDIS_URL` | api, replayer | Job queue — Upstash/Redis URL used by the replay engine to enqueue and dequeue replay sessions. |
 | `NEXT_PUBLIC_SUPABASE_URL` | frontend, api | The Supabase project URL. The frontend uses it to initialize the Supabase JS client for auth flows. The API uses it as the JWKS endpoint (`{url}/auth/v1/jwks`) to verify access tokens without round-tripping Supabase on every request. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | frontend | Public Supabase anon key — safe to expose in the browser. Enables unauthenticated Supabase operations (e.g. sign-up, sign-in) from the Next.js client. |
 | `SUPABASE_SERVICE_ROLE_KEY` | frontend (server), api | Supabase service-role key — **secret, never expose client-side**. Used by Next.js API routes to perform privileged DB operations (e.g. user management) and by the Go API as a fallback for admin-level Supabase calls. |
@@ -137,12 +137,12 @@ Default local endpoints:
 
 ```bash
 # Go services
-cd diffsurge-go
+cd surge-go
 make test
 make build
 
 # Frontend
-cd ../diffsurge-frontend
+cd ../surge-frontend
 npm ci
 npm run build
 ```
@@ -150,9 +150,9 @@ npm run build
 ## Repository layout
 
 ```text
-diffsurge/
-├── diffsurge-go/          # Go CLI + API + proxy + replay engine
-├── diffsurge-frontend/    # Next.js dashboard + marketing site
+surge/
+├── surge-go/          # Go CLI + API + proxy + replay engine
+├── surge-frontend/    # Next.js dashboard + marketing site
 ├── surge-cli-npm/   # NPM packaging for CLI binaries
 ├── docs/                  # Demo GIF + supplementary docs
 ├── scripts/               # Build and release scripts
